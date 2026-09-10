@@ -1,17 +1,42 @@
 extends Node2D
 
 const ARENA_SIZE := Vector2(320, 180)
-const MECH_SPEED := 72.0
+const PLASMA_ROUND := preload("res://scenes/plasma_round.tscn")
+const XP_ORB := preload("res://scenes/xp_orb.tscn")
+const SCOUT_SCENE := preload("res://scenes/alien_scout.tscn")
+const AUTOCANNON_COOLDOWN := 1.0
 
 var mech_position := ARENA_SIZE / 2.0
 var touch_direction := {"up": false, "down": false, "left": false, "right": false}
+var cannon_time_left := 0.0
+var scout_respawn_time_left := 0.0
+var move_speed := 72.0
+var mech_max_health := 100
+var mech_health := 100
+var repair_per_second := 0.0
+var repair_progress := 0.0
+var experience := 0
+var level := 1
+var experience_to_next_level := 10
+var weapon_level := 1
+var weapon_damage := 10
+var weapon_cooldown := AUTOCANNON_COOLDOWN
+var upgrade_open := false
+var available_upgrades: Array[Dictionary] = []
+
+@onready var scout: AlienScout = $Scout
 
 
 func _ready() -> void:
+	_connect_scout(scout)
+	_update_experience_label()
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
+	if upgrade_open:
+		return
+
 	var movement := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	movement += Vector2(
 		float(touch_direction["right"]) - float(touch_direction["left"]),
@@ -21,14 +46,150 @@ func _process(delta: float) -> void:
 	if movement.length() > 1.0:
 		movement = movement.normalized()
 
-	mech_position += movement * MECH_SPEED * delta
+	mech_position += movement * move_speed * delta
 	mech_position.x = clampf(mech_position.x, 15.0, ARENA_SIZE.x - 15.0)
 	mech_position.y = clampf(mech_position.y, 30.0, ARENA_SIZE.y - 15.0)
+	if is_instance_valid(scout):
+		scout.target_position = mech_position
+	else:
+		scout_respawn_time_left -= delta
+		if scout_respawn_time_left <= 0.0:
+			_spawn_scout()
+
+	for orb_node in get_tree().get_nodes_in_group("xp_orbs"):
+		var orb := orb_node as XpOrb
+		if orb != null:
+			orb.player_position = mech_position
+
+	if repair_per_second > 0.0:
+		repair_progress += repair_per_second * delta
+		if repair_progress >= 1.0:
+			var repaired := floori(repair_progress)
+			mech_health = mini(mech_max_health, mech_health + repaired)
+			repair_progress -= repaired
+
+	cannon_time_left -= delta
+	if cannon_time_left <= 0.0:
+		var target := _get_nearest_enemy()
+		if target != null:
+			_fire_autocannon(target)
+			cannon_time_left = weapon_cooldown
 	queue_redraw()
 
 
 func _set_touch_direction(direction: String, pressed: bool) -> void:
 	touch_direction[direction] = pressed
+
+
+func _get_nearest_enemy() -> AlienScout:
+	var nearest: AlienScout
+	var nearest_distance := INF
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := enemy_node as AlienScout
+		if enemy == null:
+			continue
+		var distance := mech_position.distance_squared_to(enemy.global_position)
+		if distance < nearest_distance:
+			nearest = enemy
+			nearest_distance = distance
+	return nearest
+
+
+func _fire_autocannon(target: AlienScout) -> void:
+	var round := PLASMA_ROUND.instantiate() as PlasmaRound
+	$Projectiles.add_child(round)
+	round.global_position = mech_position + Vector2(11, -2)
+	round.target = target
+	round.damage = weapon_damage
+
+
+func _on_scout_health_changed(current_health: int, maximum_health: int) -> void:
+	$Hud/EnemyStatus.text = "РАЗВЕДЧИК: %d / %d HP" % [current_health, maximum_health]
+
+
+func _on_scout_died() -> void:
+	var orb := XP_ORB.instantiate() as XpOrb
+	$Pickups.add_child(orb)
+	orb.global_position = scout.global_position
+	orb.collected.connect(_collect_experience)
+	scout = null
+	scout_respawn_time_left = 2.0
+	$Hud/EnemyStatus.text = "ОРБ ОПЫТА СБРОШЕН"
+
+
+func _connect_scout(new_scout: AlienScout) -> void:
+	scout = new_scout
+	scout.health_changed.connect(_on_scout_health_changed)
+	scout.died.connect(_on_scout_died)
+
+
+func _spawn_scout() -> void:
+	var new_scout := SCOUT_SCENE.instantiate() as AlienScout
+	add_child(new_scout)
+	new_scout.global_position = Vector2(35.0, 48.0)
+	_connect_scout(new_scout)
+	$Hud/EnemyStatus.text = "СИГНАЛ: РАЗВЕДЧИК ОБНАРУЖЕН"
+
+
+func _collect_experience(amount: int) -> void:
+	experience += amount
+	if experience >= experience_to_next_level:
+		experience -= experience_to_next_level
+		level += 1
+		experience_to_next_level = ceili(6.0 + 4.0 * pow(level, 1.32))
+		_open_upgrade_choice()
+	_update_experience_label()
+
+
+func _update_experience_label() -> void:
+	$Hud/Experience.text = "LV %d  |  XP %d / %d" % [level, experience, experience_to_next_level]
+
+
+func _open_upgrade_choice() -> void:
+	upgrade_open = true
+	if weapon_level < 7:
+		available_upgrades = [
+			{"kind": "weapon_damage", "title": "АВТОПУШКА: +5 урона"},
+			{"kind": "weapon_rate", "title": "АВТОПУШКА: +20% к темпу"},
+			_get_character_upgrade()
+		]
+	else:
+		available_upgrades = [_get_character_upgrade(), _get_character_upgrade(), _get_character_upgrade()]
+	$Hud/UpgradePanel.visible = true
+	$Hud/UpgradePanel/OptionA.text = available_upgrades[0].title
+	$Hud/UpgradePanel/OptionB.text = available_upgrades[1].title
+	$Hud/UpgradePanel/OptionC.text = available_upgrades[2].title
+
+
+func _get_character_upgrade() -> Dictionary:
+	var choices: Array[Dictionary] = [
+		{"kind": "max_health", "title": "БРОНЯ: +20 максимального HP"},
+		{"kind": "repair", "title": "РЕМОНТ: +1 HP в секунду"},
+		{"kind": "speed", "title": "ДВИГАТЕЛИ: +10% скорости"}
+	]
+	return choices.pick_random()
+
+
+func _choose_upgrade(index: int) -> void:
+	var choice := available_upgrades[index]
+	match choice.kind:
+		"weapon_damage":
+			weapon_level += 1
+			weapon_damage += 5
+			$Hud/EnemyStatus.text = "АВТОПУШКА УР. %d: %d УРОНА" % [weapon_level, weapon_damage]
+		"weapon_rate":
+			weapon_level += 1
+			weapon_cooldown *= 0.8
+			$Hud/EnemyStatus.text = "АВТОПУШКА УР. %d: ТЕМП +20%%" % weapon_level
+		"max_health":
+			mech_max_health += 20
+			mech_health += 20
+		"repair":
+			repair_per_second += 1.0
+		"speed":
+			move_speed *= 1.1
+	$Hud/UpgradePanel.visible = false
+	upgrade_open = false
 
 
 func _draw() -> void:
