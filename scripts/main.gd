@@ -1,21 +1,33 @@
 extends Node2D
 
-const ARENA_SIZE := Vector2(320, 180)
+const MAP_SIZE := Vector2(1600, 900)
 const PLASMA_ROUND := preload("res://scenes/plasma_round.tscn")
 const XP_ORB := preload("res://scenes/xp_orb.tscn")
+const HEALTH_PACK_SCENE := preload("res://scenes/health_pack.tscn")
 const SCOUT_SCENE := preload("res://scenes/alien_scout.tscn")
+const BRUTE_SCENE := preload("res://scenes/alien_brute.tscn")
+const ELITE_SCENE := preload("res://scenes/alien_elite.tscn")
+const BOSS_SCENE := preload("res://scenes/alien_boss.tscn")
 const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
 const AUTOCANNON_COOLDOWN := 1.0
-const MAX_SCOUTS := 3
+const PLANET_COUNT := 5
+const WAVES_PER_PLANET := 6
+const WAVE_DURATION := 60.0
 const BASE_EXPERIENCE_TO_LEVEL := 25
 const EXPERIENCE_PER_LEVEL := 12
 
-var mech_position := ARENA_SIZE / 2.0
+var mech_position := MAP_SIZE / 2.0
 var touch_direction := {"up": false, "down": false, "left": false, "right": false}
 var cannon_time_left := 0.0
-var scout_respawn_time_left := 0.0
-var pending_scout_respawns := 0
-var scout_spawn_index := 1
+var small_spawn_time_left := 0.2
+var medium_spawn_time_left := 0.6
+var large_spawn_time_left := 10.0
+var boss: AlienBoss
+var health_pack_spawn_time_left := 4.0
+var planet_number := 1
+var wave_number := 1
+var wave_elapsed := 0.0
+var last_wave_stage := 0
 var move_speed := 72.0
 var mech_max_health := 100.0
 var mech_health := 100.0
@@ -34,19 +46,32 @@ var missile_damage := 20
 var missile_cooldown := 3.0
 var missile_time_left := 1.5
 var missile_evolved := false
+var laser_unlocked := false
+var laser_tick := 0.0
+var laser_target: AlienScout
+var laser_level := 1
+var laser_damage := 3
+var laser_cooldown := 0.25
+var shuriken_unlocked := false
+var shuriken_level := 1
+var shuriken_damage := 24
+var shuriken_angle := 0.0
+var shuriken_radius := 58.0
+var shuriken_hit_time_left := 0.0
 var upgrade_open := false
 var mech_destroyed := false
 var available_upgrades: Array[Dictionary] = []
 
 @onready var initial_scout: AlienScout = $Scout
+@onready var camera: Camera2D = $Camera2D
 
 
 func _ready() -> void:
+	initial_scout.global_position = _get_wave_spawn_position()
 	_connect_scout(initial_scout)
-	for index in range(MAX_SCOUTS - 1):
-		_spawn_scout()
 	_update_experience_label()
 	_update_health_label()
+	_update_wave_hud()
 	queue_redraw()
 
 
@@ -64,8 +89,9 @@ func _process(delta: float) -> void:
 		movement = movement.normalized()
 
 	mech_position += movement * move_speed * delta
-	mech_position.x = clampf(mech_position.x, 15.0, ARENA_SIZE.x - 15.0)
-	mech_position.y = clampf(mech_position.y, 30.0, ARENA_SIZE.y - 15.0)
+	mech_position.x = clampf(mech_position.x, 15.0, MAP_SIZE.x - 15.0)
+	mech_position.y = clampf(mech_position.y, 15.0, MAP_SIZE.y - 15.0)
+	camera.global_position = mech_position
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as AlienScout
 		if enemy != null:
@@ -73,18 +99,29 @@ func _process(delta: float) -> void:
 			if enemy.global_position.distance_to(mech_position) < 24.0:
 				_take_damage(enemy.contact_damage_per_second * delta)
 
-	if pending_scout_respawns > 0:
-		scout_respawn_time_left -= delta
-		if scout_respawn_time_left <= 0.0:
-			_spawn_scout()
-			pending_scout_respawns -= 1
-			if pending_scout_respawns > 0:
-				scout_respawn_time_left = 0.7
+	_update_wave_progress(delta)
+	_update_wave_spawns(delta)
+
+	for rocket_node in get_tree().get_nodes_in_group("enemy_rockets"):
+		var enemy_rocket := rocket_node as EnemyRocket
+		if enemy_rocket != null:
+			enemy_rocket.player_position = mech_position
 
 	for orb_node in get_tree().get_nodes_in_group("xp_orbs"):
 		var orb := orb_node as XpOrb
 		if orb != null:
 			orb.player_position = mech_position
+
+	for pack_node in get_tree().get_nodes_in_group("health_packs"):
+		var health_pack := pack_node as HealthPack
+		if health_pack != null:
+			health_pack.player_position = mech_position
+
+	if get_tree().get_nodes_in_group("health_packs").size() < 6:
+		health_pack_spawn_time_left -= delta
+		if health_pack_spawn_time_left <= 0.0:
+			_spawn_health_pack()
+			health_pack_spawn_time_left = 5.0
 
 	if repair_per_second > 0.0:
 		mech_health = minf(mech_max_health, mech_health + repair_per_second * delta)
@@ -104,6 +141,24 @@ func _process(delta: float) -> void:
 			if missile_target != null:
 				_fire_hunter_missile(missile_target)
 				missile_time_left = missile_cooldown
+
+	if laser_unlocked:
+		laser_tick -= delta
+		laser_target = _get_nearest_enemy()
+		if laser_tick <= 0.0 and is_instance_valid(laser_target):
+			laser_target.take_damage(laser_damage)
+			laser_tick = laser_cooldown
+
+	if shuriken_unlocked:
+		shuriken_angle += delta * 4.0
+		shuriken_hit_time_left -= delta
+		if shuriken_hit_time_left <= 0.0:
+			var shuriken_position := mech_position + Vector2(cos(shuriken_angle), sin(shuriken_angle)) * shuriken_radius
+			for enemy_node in get_tree().get_nodes_in_group("enemies"):
+				var enemy := enemy_node as AlienScout
+				if enemy != null and enemy.global_position.distance_to(shuriken_position) <= 18.0:
+					enemy.take_damage(shuriken_damage)
+			shuriken_hit_time_left = 0.25
 	queue_redraw()
 
 
@@ -153,9 +208,19 @@ func _on_scout_died(dead_scout: AlienScout) -> void:
 	var orb := XP_ORB.instantiate() as XpOrb
 	$Pickups.add_child(orb)
 	orb.global_position = dead_scout.global_position
+	orb.tier = dead_scout.xp_tier
+	orb.experience_amount = dead_scout.experience_amount
 	orb.collected.connect(_collect_experience)
-	pending_scout_respawns += 1
-	scout_respawn_time_left = 2.0
+	if dead_scout is AlienBoss:
+		boss = null
+		if wave_number == 6:
+			planet_number = mini(planet_number + 1, PLANET_COUNT)
+			wave_number = 1
+			wave_elapsed = 0.0
+			last_wave_stage = 0
+			_update_wave_hud()
+			$Hud/EnemyStatus.text = "ЗОНА %d ПРОЙДЕНА" % (planet_number - 1)
+			return
 	$Hud/EnemyStatus.text = "ОРБ ОПЫТА СБРОШЕН"
 
 
@@ -167,11 +232,200 @@ func _connect_scout(new_scout: AlienScout) -> void:
 func _spawn_scout() -> void:
 	var new_scout := SCOUT_SCENE.instantiate() as AlienScout
 	add_child(new_scout)
-	var spawn_positions := [Vector2(35, 48), Vector2(282, 52), Vector2(164, 155)]
-	new_scout.global_position = spawn_positions[scout_spawn_index % spawn_positions.size()]
-	scout_spawn_index += 1
+	new_scout.global_position = _get_wave_spawn_position()
 	_connect_scout(new_scout)
 	$Hud/EnemyStatus.text = "СИГНАЛ: РАЗВЕДЧИК ОБНАРУЖЕН"
+
+
+func _spawn_brute() -> void:
+	var new_brute := BRUTE_SCENE.instantiate() as AlienBrute
+	add_child(new_brute)
+	new_brute.global_position = _get_wave_spawn_position()
+	_connect_scout(new_brute)
+	$Hud/EnemyStatus.text = "СИГНАЛ: БРОНИРОВАННЫЙ ПРИШЕЛЕЦ"
+
+
+func _spawn_elite() -> void:
+	var new_elite := ELITE_SCENE.instantiate() as AlienElite
+	add_child(new_elite)
+	new_elite.global_position = _get_wave_spawn_position()
+	_connect_scout(new_elite)
+	$Hud/EnemyStatus.text = "СИГНАЛ: ЭЛИТНЫЙ РАКЕТНИК"
+
+
+func _spawn_boss() -> void:
+	if is_instance_valid(boss):
+		return
+	boss = BOSS_SCENE.instantiate() as AlienBoss
+	add_child(boss)
+	boss.global_position = _get_wave_spawn_position()
+	_connect_scout(boss)
+	$Hud/EnemyStatus.text = "БОСС: ОСАДНЫЙ ХОДОК — ФАЗА 1"
+
+
+func _debug_spawn_scout() -> void:
+	_spawn_scout()
+
+
+func _debug_spawn_brute() -> void:
+	_spawn_brute()
+
+
+func _debug_spawn_elite() -> void:
+	_spawn_elite()
+
+
+func _debug_spawn_boss() -> void:
+	_spawn_boss()
+
+
+func _spawn_health_pack() -> void:
+	var health_pack := HEALTH_PACK_SCENE.instantiate() as HealthPack
+	$Pickups.add_child(health_pack)
+	health_pack.global_position = _get_random_world_position(120.0)
+	health_pack.collected.connect(_collect_health_pack)
+
+
+func _collect_health_pack(heal_fraction: float) -> void:
+	mech_health = minf(mech_max_health, mech_health + mech_max_health * heal_fraction)
+	$Hud/EnemyStatus.text = "АПТЕЧКА: +25% HP"
+	_update_health_label()
+
+
+func _count_scouts() -> int:
+	var count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if enemy_node is AlienScout and not (enemy_node is AlienBrute) and not (enemy_node is AlienElite) and not (enemy_node is AlienBoss):
+			count += 1
+	return count
+
+
+func _count_brutes() -> int:
+	var count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if enemy_node is AlienBrute:
+			count += 1
+	return count
+
+
+func _count_elites() -> int:
+	var count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if enemy_node is AlienElite:
+			count += 1
+	return count
+
+
+func _get_wave_spawn_position() -> Vector2:
+	var offset := Vector2(randf_range(-300.0, 300.0), randf_range(-160.0, 160.0))
+	if absf(offset.x) < 170.0 and absf(offset.y) < 100.0:
+		offset.x = 260.0 if offset.x >= 0.0 else -260.0
+	var position := mech_position + offset
+	position.x = clampf(position.x, 35.0, MAP_SIZE.x - 35.0)
+	position.y = clampf(position.y, 35.0, MAP_SIZE.y - 35.0)
+	return position
+
+
+func _get_random_world_position(minimum_distance: float) -> Vector2:
+	var position := Vector2.ZERO
+	for attempt in range(12):
+		position = Vector2(
+			randf_range(35.0, MAP_SIZE.x - 35.0),
+			randf_range(35.0, MAP_SIZE.y - 35.0)
+		)
+		if position.distance_to(mech_position) >= minimum_distance:
+			return position
+	return position
+
+
+func _update_wave_progress(delta: float) -> void:
+	if wave_number == 6 and is_instance_valid(boss):
+		_update_wave_hud()
+		return
+	wave_elapsed += delta
+	if wave_elapsed >= WAVE_DURATION:
+		wave_elapsed -= WAVE_DURATION
+		wave_number += 1
+		if wave_number > WAVES_PER_PLANET:
+			wave_number = 1
+			planet_number = mini(planet_number + 1, PLANET_COUNT)
+		last_wave_stage = 0
+	_update_wave_hud()
+
+
+func _update_wave_spawns(delta: float) -> void:
+	var limits := _get_wave_limits()
+	_enforce_wave_caps(limits)
+	if wave_number == 6 and not is_instance_valid(boss):
+		_spawn_boss()
+	if _count_scouts() < limits.small:
+		small_spawn_time_left -= delta
+		if small_spawn_time_left <= 0.0:
+			_spawn_scout()
+			small_spawn_time_left = 0.65
+
+	if _count_brutes() < limits.medium:
+		medium_spawn_time_left -= delta
+		if medium_spawn_time_left <= 0.0:
+			_spawn_brute()
+			medium_spawn_time_left = 2.2
+
+	if _count_elites() < limits.large:
+		large_spawn_time_left -= delta
+		if large_spawn_time_left <= 0.0:
+			_spawn_elite()
+			large_spawn_time_left = 10.0
+
+
+func _enforce_wave_caps(limits: Dictionary) -> void:
+	var small_enemies: Array[AlienScout] = []
+	var medium_enemies: Array[AlienBrute] = []
+	var large_enemies: Array[AlienElite] = []
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if enemy_node is AlienElite:
+			large_enemies.append(enemy_node)
+		elif enemy_node is AlienBrute:
+			medium_enemies.append(enemy_node)
+		elif enemy_node is AlienScout and not (enemy_node is AlienBoss):
+			small_enemies.append(enemy_node)
+	for index in range(limits.small, small_enemies.size()):
+		small_enemies[index].queue_free()
+	for index in range(limits.medium, medium_enemies.size()):
+		medium_enemies[index].queue_free()
+	for index in range(limits.large, large_enemies.size()):
+		large_enemies[index].queue_free()
+
+
+func _get_wave_limits() -> Dictionary:
+	var second_stage_starts_at := 25.0 if wave_number == 1 else 30.0
+	var stage := 2 if wave_elapsed >= second_stage_starts_at else 1
+	if stage != last_wave_stage:
+		last_wave_stage = stage
+		small_spawn_time_left = minf(small_spawn_time_left, 0.2)
+		medium_spawn_time_left = minf(medium_spawn_time_left, 0.4)
+		large_spawn_time_left = minf(large_spawn_time_left, 0.5)
+		$Hud/EnemyStatus.text = "ВОЛНА %d — СТАДИЯ %d" % [wave_number, stage]
+
+	if wave_number == 1:
+		if stage == 1:
+			return {"small": 5, "medium": 1, "large": 0}
+		return {"small": 7, "medium": 3, "large": 0}
+	if wave_number == 2:
+		if stage == 1:
+			return {"small": 7, "medium": 3, "large": 1}
+		return {"small": 5, "medium": 5, "large": 2}
+	if wave_number == 6:
+		return {"small": 0, "medium": 0, "large": 0}
+
+	# Waves 3–5 will receive their own designs next; this keeps the prototype playable meanwhile.
+	return {"small": 7, "medium": 5, "large": 2}
+
+
+func _update_wave_hud() -> void:
+	var second_stage_starts_at := 25.0 if wave_number == 1 else 30.0
+	var stage := 2 if wave_elapsed >= second_stage_starts_at else 1
+	$Hud/Wave.text = "ЗОНА %d  •  ВОЛНА %d/%d" % [planet_number, wave_number, WAVES_PER_PLANET]
+	$Hud/WaveTimer.text = "СТАДИЯ %d  •  %d СЕК" % [stage, ceili(WAVE_DURATION - wave_elapsed)]
 
 
 func _collect_experience(amount: int) -> void:
@@ -193,6 +447,7 @@ func _update_experience_label() -> void:
 
 func _open_upgrade_choice() -> void:
 	upgrade_open = true
+	get_tree().paused = true
 	if weapon_level == 6 and not autocannon_evolved:
 		available_upgrades = [
 			{"kind": "evolve_autocannon", "title": "УР. 7: ШКВАЛ — ТРОЙНОЙ ЗАЛП"},
@@ -209,6 +464,30 @@ func _open_upgrade_choice() -> void:
 		available_upgrades = [
 			{"kind": "weapon_damage", "title": "АВТОПУШКА: +5 урона"},
 			{"kind": "unlock_missile", "title": "НОВОЕ ОРУЖИЕ: ОХОТНИЧЬИ РАКЕТЫ"},
+			_get_character_upgrade()
+		]
+	elif not laser_unlocked and level >= 4:
+		available_upgrades = [
+			{"kind": "unlock_laser", "title": "НОВОЕ ОРУЖИЕ: ПРОЖИГАЮЩИЙ ЛАЗЕР"},
+			{"kind": "weapon_damage", "title": "АВТОПУШКА: +5 урона"},
+			_get_character_upgrade()
+		]
+	elif not shuriken_unlocked and level >= 5:
+		available_upgrades = [
+			{"kind": "unlock_shuriken", "title": "НОВОЕ ОРУЖИЕ: ВРАЩАЮЩИЙСЯ ШИП"},
+			{"kind": "missile_damage", "title": "РАКЕТЫ: +10 урона"},
+			_get_character_upgrade()
+		]
+	elif laser_unlocked and laser_level < 6:
+		available_upgrades = [
+			{"kind": "laser_damage", "title": "ЛАЗЕР: +4 урона в секунду"},
+			{"kind": "laser_rate", "title": "ЛАЗЕР: +20% к темпу"},
+			_get_character_upgrade()
+		]
+	elif shuriken_unlocked and shuriken_level < 6:
+		available_upgrades = [
+			{"kind": "shuriken_damage", "title": "ШИП: +12 урона"},
+			{"kind": "shuriken_radius", "title": "ШИП: +15 к радиусу"},
 			_get_character_upgrade()
 		]
 	elif missile_unlocked and weapon_level < 6 and missile_level < 6:
@@ -277,6 +556,24 @@ func _choose_upgrade(index: int) -> void:
 			missile_level = 1
 			missile_time_left = 0.2
 			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ОХОТНИЧЬИ РАКЕТЫ"
+		"unlock_laser":
+			laser_unlocked = true
+			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ПРОЖИГАЮЩИЙ ЛАЗЕР"
+		"unlock_shuriken":
+			shuriken_unlocked = true
+			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ВРАЩАЮЩИЙСЯ ШИП"
+		"laser_damage":
+			laser_level += 1
+			laser_damage += 1
+		"laser_rate":
+			laser_level += 1
+			laser_cooldown *= 0.8
+		"shuriken_damage":
+			shuriken_level += 1
+			shuriken_damage += 12
+		"shuriken_radius":
+			shuriken_level += 1
+			shuriken_radius += 15.0
 		"missile_damage":
 			missile_level += 1
 			missile_damage += 10
@@ -299,6 +596,7 @@ func _choose_upgrade(index: int) -> void:
 			move_speed *= 1.1
 	$Hud/UpgradePanel.visible = false
 	upgrade_open = false
+	get_tree().paused = false
 	_update_health_label()
 
 
@@ -317,22 +615,27 @@ func _update_health_label() -> void:
 
 
 func _draw() -> void:
-	# Alien planet ground: deliberately simple so gameplay remains the focus for now.
-	draw_rect(Rect2(Vector2.ZERO, ARENA_SIZE), Color("101d29"))
+	# A five-times-larger alien planet. Camera movement makes the terrain scroll beneath the mech.
+	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("101d29"))
+	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("36556b"), false, 3.0)
 
-	for x in range(0, 321, 16):
-		draw_line(Vector2(x, 25), Vector2(x, 180), Color("172a36"), 1.0)
-	for y in range(25, 181, 16):
-		draw_line(Vector2(0, y), Vector2(320, y), Color("172a36"), 1.0)
+	for x in range(0, int(MAP_SIZE.x) + 1, 32):
+		draw_line(Vector2(x, 0), Vector2(x, MAP_SIZE.y), Color("142733"), 1.0)
+	for y in range(0, int(MAP_SIZE.y) + 1, 32):
+		draw_line(Vector2(0, y), Vector2(MAP_SIZE.x, y), Color("142733"), 1.0)
 
-	# Craters and alien vegetation are placeholders for later planet tiles.
-	draw_circle(Vector2(47, 55), 12.0, Color("183b40"))
-	draw_circle(Vector2(264, 73), 16.0, Color("183b40"))
-	draw_circle(Vector2(93, 145), 10.0, Color("183b40"))
-	draw_circle(Vector2(210, 135), 7.0, Color("24584b"))
-	draw_circle(Vector2(215, 130), 3.0, Color("57b88b"))
+	for landmark in [Vector2(210, 180), Vector2(420, 650), Vector2(620, 240), Vector2(840, 720), Vector2(1040, 160), Vector2(1250, 510), Vector2(1480, 760)]:
+		draw_circle(landmark, 18.0, Color("183b40"))
+		draw_circle(landmark + Vector2(5, -4), 5.0, Color("24584b"))
 
 	_draw_mech(mech_position)
+	if laser_unlocked and is_instance_valid(laser_target):
+		draw_line(mech_position, laser_target.global_position, Color("ff5864"), 2.0)
+	if shuriken_unlocked:
+		var shuriken_position := mech_position + Vector2(cos(shuriken_angle), sin(shuriken_angle)) * shuriken_radius
+		draw_circle(shuriken_position, 8.0, Color("1b2634"))
+		draw_line(shuriken_position + Vector2(-8, -8), shuriken_position + Vector2(8, 8), Color("e7f3ff"), 3.0)
+		draw_line(shuriken_position + Vector2(8, -8), shuriken_position + Vector2(-8, 8), Color("e7f3ff"), 3.0)
 
 
 func _draw_mech(center: Vector2) -> void:

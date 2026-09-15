@@ -4,6 +4,8 @@ extends Node2D
 @export var movement_speed := 24.0
 @export var max_health := 30
 @export var contact_damage_per_second := 8.0
+var experience_amount := 10
+var xp_tier := XpOrb.Tier.SMALL_YELLOW
 var target_position := Vector2.ZERO
 var travel_direction := Vector2.DOWN
 var health := max_health
