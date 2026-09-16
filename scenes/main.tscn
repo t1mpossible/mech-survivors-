@@ -1,10 +1,11 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/alien_scout.tscn" id="2_scout"]
 [ext_resource type="PackedScene" path="res://scenes/plasma_round.tscn" id="3_round"]
 [ext_resource type="PackedScene" path="res://scenes/xp_orb.tscn" id="4_orb"]
 [ext_resource type="PackedScene" path="res://scenes/hunter_missile.tscn" id="5_missile"]
+[ext_resource type="Script" path="res://scripts/pause_panel.gd" id="6_pause"]
 
 [sub_resource type="StyleBoxFlat" id="StyleXpBackground"]
 bg_color = Color(0.08, 0.11, 0.15, 0.9)
@@ -83,7 +84,7 @@ text = "WASD / стрелки или кнопки"
 
 [node name="Wave" type="Label" parent="Hud"]
 offset_left = 8.0
-offset_top = 34.0
+offset_top = 20.0
 offset_right = 145.0
 offset_bottom = 45.0
 theme_override_colors/font_color = Color(0.72, 0.85, 1, 1)
@@ -92,14 +93,23 @@ text = "ЗОНА 1  •  ВОЛНА 1"
 
 [node name="WaveTimer" type="Label" parent="Hud"]
 offset_left = 8.0
-offset_top = 44.0
+offset_top = 29.0
 offset_right = 145.0
 offset_bottom = 55.0
 theme_override_colors/font_color = Color(1, 0.78, 0.2, 1)
 theme_override_font_sizes/font_size = 8
 text = "СТАДИЯ 1  •  60 СЕК"
 
+[node name="Fps" type="Label" parent="Hud"]
+offset_left = 270.0
+offset_top = 34.0
+offset_right = 314.0
+offset_bottom = 45.0
+theme_override_font_sizes/font_size = 7
+text = "FPS 60"
+
 [node name="DebugScout" type="Button" parent="Hud"]
+visible = false
 offset_left = 8.0
 offset_top = 58.0
 offset_right = 55.0
@@ -108,6 +118,7 @@ theme_override_font_sizes/font_size = 6
 text = "+ МЕЛКИЙ"
 
 [node name="DebugBrute" type="Button" parent="Hud"]
+visible = false
 offset_left = 58.0
 offset_top = 58.0
 offset_right = 105.0
@@ -116,6 +127,7 @@ theme_override_font_sizes/font_size = 6
 text = "+ СРЕДНИЙ"
 
 [node name="DebugElite" type="Button" parent="Hud"]
+visible = false
 offset_left = 108.0
 offset_top = 58.0
 offset_right = 155.0
@@ -124,6 +136,7 @@ theme_override_font_sizes/font_size = 6
 text = "+ БОЛЬШОЙ"
 
 [node name="DebugBoss" type="Button" parent="Hud"]
+visible = false
 offset_left = 158.0
 offset_top = 58.0
 offset_right = 205.0
@@ -132,6 +145,7 @@ theme_override_font_sizes/font_size = 6
 text = "+ БОСС"
 
 [node name="EnemyStatus" type="Label" parent="Hud"]
+visible = false
 offset_left = 8.0
 offset_top = 20.0
 offset_right = 180.0
@@ -191,27 +205,95 @@ text = "100/100"
 [node name="UpgradePanel" type="Panel" parent="Hud"]
 visible = false
 process_mode = 3
-offset_left = 42.0
-offset_top = 38.0
-offset_right = 278.0
-offset_bottom = 143.0
+offset_left = 65.0
+offset_top = 45.0
+offset_right = 255.0
+offset_bottom = 135.0
 theme_override_styles/panel = null
+
+[node name="GameOver" type="Panel" parent="Hud"]
+visible = false
+process_mode = 3
+offset_left = 65.0
+offset_top = 45.0
+offset_right = 255.0
+offset_bottom = 135.0
+
+[node name="PausePanel" type="Panel" parent="Hud"]
+visible = false
+process_mode = 3
+script = ExtResource("6_pause")
+offset_left = 85.0
+offset_top = 56.0
+offset_right = 235.0
+offset_bottom = 124.0
+
+[node name="Title" type="Label" parent="Hud/PausePanel"]
+offset_left = 10.0
+offset_top = 9.0
+offset_right = 140.0
+offset_bottom = 25.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.72, 0.91, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "ПАУЗА"
+
+[node name="Hint" type="Label" parent="Hud/PausePanel"]
+offset_left = 10.0
+offset_top = 26.0
+offset_right = 140.0
+offset_bottom = 37.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.65, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 6
+text = "ESC — продолжить"
+
+[node name="Resume" type="Button" parent="Hud/PausePanel"]
+offset_left = 20.0
+offset_top = 42.0
+offset_right = 130.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 7
+text = "Продолжить"
+
+[node name="Title" type="Label" parent="Hud/GameOver"]
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 160.0
+offset_bottom = 27.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+text = "КОНЕЦ ИГРЫ"
+
+[node name="Restart" type="Button" parent="Hud/GameOver"]
+offset_left = 25.0
+offset_top = 30.0
+offset_right = 145.0
+offset_bottom = 45.0
+text = "Сыграть заново"
+
+[node name="Menu" type="Button" parent="Hud/GameOver"]
+offset_left = 25.0
+offset_top = 48.0
+offset_right = 145.0
+offset_bottom = 63.0
+text = "Меню"
 
 [node name="Title" type="Label" parent="Hud/UpgradePanel"]
 offset_left = 10.0
 offset_top = 8.0
-offset_right = 226.0
-offset_bottom = 24.0
+offset_right = 170.0
+offset_bottom = 19.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 9
 text = "НОВЫЙ УРОВЕНЬ"
 
 [node name="Subtitle" type="Label" parent="Hud/UpgradePanel"]
 offset_left = 10.0
-offset_top = 24.0
-offset_right = 226.0
-offset_bottom = 36.0
+offset_top = 21.0
+offset_right = 170.0
+offset_bottom = 29.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.7, 0.85, 0.9, 1)
 theme_override_font_sizes/font_size = 7
@@ -219,23 +301,23 @@ text = "Выберите одно улучшение"
 
 [node name="OptionA" type="Button" parent="Hud/UpgradePanel"]
 offset_left = 12.0
-offset_top = 43.0
-offset_right = 224.0
-offset_bottom = 59.0
+offset_top = 36.0
+offset_right = 168.0
+offset_bottom = 49.0
 theme_override_font_sizes/font_size = 7
 
 [node name="OptionB" type="Button" parent="Hud/UpgradePanel"]
 offset_left = 12.0
-offset_top = 64.0
-offset_right = 224.0
-offset_bottom = 80.0
+offset_top = 54.0
+offset_right = 168.0
+offset_bottom = 67.0
 theme_override_font_sizes/font_size = 7
 
 [node name="OptionC" type="Button" parent="Hud/UpgradePanel"]
 offset_left = 12.0
-offset_top = 85.0
-offset_right = 224.0
-offset_bottom = 101.0
+offset_top = 72.0
+offset_right = 168.0
+offset_bottom = 85.0
 theme_override_font_sizes/font_size = 7
 
 [node name="Up" type="Button" parent="Hud"]
@@ -293,6 +375,9 @@ text = "→"
 [connection signal="pressed" from="Hud/UpgradePanel/OptionA" to="." method="_choose_upgrade" binds= [0]]
 [connection signal="pressed" from="Hud/UpgradePanel/OptionB" to="." method="_choose_upgrade" binds= [1]]
 [connection signal="pressed" from="Hud/UpgradePanel/OptionC" to="." method="_choose_upgrade" binds= [2]]
+[connection signal="pressed" from="Hud/GameOver/Restart" to="." method="_restart_game"]
+[connection signal="pressed" from="Hud/GameOver/Menu" to="." method="_return_to_menu"]
+[connection signal="pressed" from="Hud/PausePanel/Resume" to="." method="_resume_game"]
 [connection signal="pressed" from="Hud/DebugScout" to="." method="_debug_spawn_scout"]
 [connection signal="pressed" from="Hud/DebugBrute" to="." method="_debug_spawn_brute"]
 [connection signal="pressed" from="Hud/DebugElite" to="." method="_debug_spawn_elite"]

@@ -33,6 +33,8 @@ func _launch_rocket() -> void:
 	rocket.direction = (target_position - global_position).normalized()
 	rocket.speed = 42.0
 	rocket.damage = 7.0
+	# The small rocket gets one second of guidance, then continues in a straight line.
+	rocket.homing_time = 1.0
 	rocket.hit_player.connect(get_parent()._take_damage)
 
 

@@ -7,6 +7,9 @@ const HEALTH_PACK_SCENE := preload("res://scenes/health_pack.tscn")
 const SCOUT_SCENE := preload("res://scenes/alien_scout.tscn")
 const BRUTE_SCENE := preload("res://scenes/alien_brute.tscn")
 const ELITE_SCENE := preload("res://scenes/alien_elite.tscn")
+const BOMBER_SCENE := preload("res://scenes/alien_bomber.tscn")
+const TURRET_SCENE := preload("res://scenes/alien_turret.tscn")
+const MORTAR_SCENE := preload("res://scenes/alien_mortar.tscn")
 const BOSS_SCENE := preload("res://scenes/alien_boss.tscn")
 const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
 const AUTOCANNON_COOLDOWN := 1.0
@@ -21,6 +24,9 @@ var touch_direction := {"up": false, "down": false, "left": false, "right": fals
 var cannon_time_left := 0.0
 var small_spawn_time_left := 0.2
 var medium_spawn_time_left := 0.6
+var bomber_spawn_time_left := 1.0
+var turret_spawn_time_left := 1.0
+var mortar_spawn_time_left := 1.0
 var large_spawn_time_left := 10.0
 var boss: AlienBoss
 var health_pack_spawn_time_left := 4.0
@@ -56,10 +62,11 @@ var shuriken_unlocked := false
 var shuriken_level := 1
 var shuriken_damage := 24
 var shuriken_angle := 0.0
-var shuriken_radius := 58.0
+var shuriken_radius := 40.0
 var shuriken_hit_time_left := 0.0
 var upgrade_open := false
 var mech_destroyed := false
+var manual_paused := false
 var available_upgrades: Array[Dictionary] = []
 
 @onready var initial_scout: AlienScout = $Scout
@@ -76,7 +83,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if upgrade_open or mech_destroyed:
+	$Hud/Fps.text = "FPS %d" % Engine.get_frames_per_second()
+	if manual_paused or upgrade_open or mech_destroyed:
 		return
 
 	var movement := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -150,14 +158,15 @@ func _process(delta: float) -> void:
 			laser_tick = laser_cooldown
 
 	if shuriken_unlocked:
-		shuriken_angle += delta * 4.0
+		shuriken_angle += delta * 5.36
 		shuriken_hit_time_left -= delta
 		if shuriken_hit_time_left <= 0.0:
-			var shuriken_position := mech_position + Vector2(cos(shuriken_angle), sin(shuriken_angle)) * shuriken_radius
-			for enemy_node in get_tree().get_nodes_in_group("enemies"):
-				var enemy := enemy_node as AlienScout
-				if enemy != null and enemy.global_position.distance_to(shuriken_position) <= 18.0:
-					enemy.take_damage(shuriken_damage)
+			for angle_offset in [0.0, PI]:
+				var shuriken_position := mech_position + Vector2(cos(shuriken_angle + angle_offset), sin(shuriken_angle + angle_offset)) * shuriken_radius
+				for enemy_node in get_tree().get_nodes_in_group("enemies"):
+					var enemy := enemy_node as AlienScout
+					if enemy != null and enemy.global_position.distance_to(shuriken_position) <= 18.0:
+						enemy.take_damage(shuriken_damage)
 			shuriken_hit_time_left = 0.25
 	queue_redraw()
 
@@ -245,6 +254,33 @@ func _spawn_brute() -> void:
 	$Hud/EnemyStatus.text = "СИГНАЛ: БРОНИРОВАННЫЙ ПРИШЕЛЕЦ"
 
 
+func _spawn_bomber() -> void:
+	var bomber := BOMBER_SCENE.instantiate() as AlienBomber
+	add_child(bomber)
+	bomber.global_position = _get_wave_spawn_position()
+	_connect_scout(bomber)
+	$Hud/EnemyStatus.text = "СИГНАЛ: КАМИКАДЗЕ"
+
+func _spawn_turret() -> void:
+	var turret := TURRET_SCENE.instantiate() as AlienTurret
+	add_child(turret)
+	turret.global_position = _get_wave_spawn_position()
+	_connect_scout(turret)
+
+func _spawn_mortar() -> void:
+	var mortar := MORTAR_SCENE.instantiate() as AlienMortar
+	add_child(mortar)
+	mortar.global_position = _get_wave_spawn_position()
+	_connect_scout(mortar)
+
+func _count_turrets() -> int:
+	var count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if enemy_node is AlienTurret:
+			count += 1
+	return count
+
+
 func _spawn_elite() -> void:
 	var new_elite := ELITE_SCENE.instantiate() as AlienElite
 	add_child(new_elite)
@@ -295,7 +331,7 @@ func _collect_health_pack(heal_fraction: float) -> void:
 func _count_scouts() -> int:
 	var count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
-		if enemy_node is AlienScout and not (enemy_node is AlienBrute) and not (enemy_node is AlienElite) and not (enemy_node is AlienBoss):
+		if enemy_node is AlienScout and not (enemy_node is AlienBrute) and not (enemy_node is AlienElite) and not (enemy_node is AlienBoss) and not (enemy_node is AlienBomber):
 			count += 1
 	return count
 
@@ -304,6 +340,14 @@ func _count_brutes() -> int:
 	var count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		if enemy_node is AlienBrute:
+			count += 1
+	return count
+
+
+func _count_bombers() -> int:
+	var count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if enemy_node is AlienBomber:
 			count += 1
 	return count
 
@@ -370,6 +414,17 @@ func _update_wave_spawns(delta: float) -> void:
 			_spawn_brute()
 			medium_spawn_time_left = 2.2
 
+	if _count_bombers() < limits.bomber:
+		bomber_spawn_time_left -= delta
+		if bomber_spawn_time_left <= 0.0:
+			_spawn_bomber()
+			bomber_spawn_time_left = 2.5
+	if _count_turrets() < limits.get("turret", 0):
+		turret_spawn_time_left -= delta
+		if turret_spawn_time_left <= 0.0:
+			_spawn_turret()
+			turret_spawn_time_left = 2.0
+
 	if _count_elites() < limits.large:
 		large_spawn_time_left -= delta
 		if large_spawn_time_left <= 0.0:
@@ -380,10 +435,13 @@ func _update_wave_spawns(delta: float) -> void:
 func _enforce_wave_caps(limits: Dictionary) -> void:
 	var small_enemies: Array[AlienScout] = []
 	var medium_enemies: Array[AlienBrute] = []
+	var bomber_enemies: Array[AlienBomber] = []
 	var large_enemies: Array[AlienElite] = []
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		if enemy_node is AlienElite:
 			large_enemies.append(enemy_node)
+		elif enemy_node is AlienBomber:
+			bomber_enemies.append(enemy_node)
 		elif enemy_node is AlienBrute:
 			medium_enemies.append(enemy_node)
 		elif enemy_node is AlienScout and not (enemy_node is AlienBoss):
@@ -392,6 +450,8 @@ func _enforce_wave_caps(limits: Dictionary) -> void:
 		small_enemies[index].queue_free()
 	for index in range(limits.medium, medium_enemies.size()):
 		medium_enemies[index].queue_free()
+	for index in range(limits.bomber, bomber_enemies.size()):
+		bomber_enemies[index].queue_free()
 	for index in range(limits.large, large_enemies.size()):
 		large_enemies[index].queue_free()
 
@@ -408,17 +468,28 @@ func _get_wave_limits() -> Dictionary:
 
 	if wave_number == 1:
 		if stage == 1:
-			return {"small": 5, "medium": 1, "large": 0}
-		return {"small": 7, "medium": 3, "large": 0}
+			return {"small": 5, "medium": 1, "large": 0, "bomber": 0}
+		return {"small": 7, "medium": 3, "large": 0, "bomber": 0}
 	if wave_number == 2:
 		if stage == 1:
-			return {"small": 7, "medium": 3, "large": 1}
-		return {"small": 5, "medium": 5, "large": 2}
+			return {"small": 7, "medium": 3, "large": 1, "bomber": 0}
+		return {"small": 5, "medium": 5, "large": 2, "bomber": 0}
+	if wave_number == 3:
+		if stage == 1:
+			return {"small": 7, "medium": 4, "large": 1, "bomber": 1}
+		return {"small": 8, "medium": 5, "large": 1, "bomber": 3}
+	if wave_number == 4:
+		if stage == 1:
+			return {"small": 8, "medium": 5, "large": 2, "bomber": 3, "turret": 1}
+		return {"small": 10, "medium": 6, "large": 2, "bomber": 4, "turret": 3}
+	if wave_number == 5:
+		if stage == 1:
+			return {"small": 10, "medium": 6, "large": 2, "bomber": 4}
+		return {"small": 12, "medium": 7, "large": 3, "bomber": 5}
 	if wave_number == 6:
-		return {"small": 0, "medium": 0, "large": 0}
+		return {"small": 0, "medium": 0, "large": 0, "bomber": 0}
 
-	# Waves 3–5 will receive their own designs next; this keeps the prototype playable meanwhile.
-	return {"small": 7, "medium": 5, "large": 2}
+	return {"small": 12, "medium": 7, "large": 3, "bomber": 5}
 
 
 func _update_wave_hud() -> void:
@@ -605,7 +676,35 @@ func _take_damage(amount: float) -> void:
 	_update_health_label()
 	if mech_health <= 0.0:
 		mech_destroyed = true
-		$Hud/EnemyStatus.text = "МЕХ УНИЧТОЖЕН — ПЕРЕЗАПУСТИТЕ ИГРУ"
+		get_tree().paused = true
+		$Hud/GameOver.visible = true
+
+
+func _restart_game() -> void:
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+
+
+func _return_to_menu() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+
+func _toggle_pause() -> void:
+	manual_paused = not manual_paused
+	$Hud/PausePanel.visible = manual_paused
+	get_tree().paused = manual_paused
+
+
+func _resume_game() -> void:
+	if manual_paused:
+		_toggle_pause()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and not event.is_echo() and not upgrade_open and not mech_destroyed:
+		_toggle_pause()
+		get_viewport().set_input_as_handled()
 
 
 func _update_health_label() -> void:
@@ -632,10 +731,11 @@ func _draw() -> void:
 	if laser_unlocked and is_instance_valid(laser_target):
 		draw_line(mech_position, laser_target.global_position, Color("ff5864"), 2.0)
 	if shuriken_unlocked:
-		var shuriken_position := mech_position + Vector2(cos(shuriken_angle), sin(shuriken_angle)) * shuriken_radius
-		draw_circle(shuriken_position, 8.0, Color("1b2634"))
-		draw_line(shuriken_position + Vector2(-8, -8), shuriken_position + Vector2(8, 8), Color("e7f3ff"), 3.0)
-		draw_line(shuriken_position + Vector2(8, -8), shuriken_position + Vector2(-8, 8), Color("e7f3ff"), 3.0)
+		for angle_offset in [0.0, PI]:
+			var shuriken_position := mech_position + Vector2(cos(shuriken_angle + angle_offset), sin(shuriken_angle + angle_offset)) * shuriken_radius
+			draw_circle(shuriken_position, 8.0, Color("1b2634"))
+			draw_line(shuriken_position + Vector2(-8, -8), shuriken_position + Vector2(8, 8), Color("e7f3ff"), 3.0)
+			draw_line(shuriken_position + Vector2(8, -8), shuriken_position + Vector2(-8, 8), Color("e7f3ff"), 3.0)
 
 
 func _draw_mech(center: Vector2) -> void:

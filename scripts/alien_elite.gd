@@ -33,6 +33,7 @@ func _launch_side_rocket(side_offset: Vector2) -> void:
 	rocket.direction = (target_position - rocket.global_position).normalized()
 	rocket.speed = 55.0
 	rocket.damage = 12.0
+	rocket.homing_time = 1.0
 	rocket.hit_player.connect(get_parent()._take_damage)
 
 
