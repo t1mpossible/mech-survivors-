@@ -65,7 +65,78 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 7
 text = "Выход из игры"
 
+[node name="LevelPanel" type="Panel" parent="."]
+visible = false
+offset_left = 55.0
+offset_top = 28.0
+offset_right = 265.0
+offset_bottom = 154.0
+
+[node name="Title" type="Label" parent="LevelPanel"]
+offset_left = 10.0
+offset_top = 7.0
+offset_right = 200.0
+offset_bottom = 19.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.45, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "ВЫБОР ЗОНЫ"
+
+[node name="Zone1" type="Button" parent="LevelPanel"]
+offset_left = 20.0
+offset_top = 24.0
+offset_right = 190.0
+offset_bottom = 37.0
+theme_override_font_sizes/font_size = 7
+text = "ЗОНА 1"
+
+[node name="Zone2" type="Button" parent="LevelPanel"]
+offset_left = 20.0
+offset_top = 40.0
+offset_right = 190.0
+offset_bottom = 53.0
+theme_override_font_sizes/font_size = 7
+text = "ЗОНА 2 — ЗАКРЫТО"
+
+[node name="Zone3" type="Button" parent="LevelPanel"]
+offset_left = 20.0
+offset_top = 56.0
+offset_right = 190.0
+offset_bottom = 69.0
+theme_override_font_sizes/font_size = 7
+text = "ЗОНА 3 — ЗАКРЫТО"
+
+[node name="Zone4" type="Button" parent="LevelPanel"]
+offset_left = 20.0
+offset_top = 72.0
+offset_right = 190.0
+offset_bottom = 85.0
+theme_override_font_sizes/font_size = 7
+text = "ЗОНА 4 — ЗАКРЫТО"
+
+[node name="Zone5" type="Button" parent="LevelPanel"]
+offset_left = 20.0
+offset_top = 88.0
+offset_right = 190.0
+offset_bottom = 101.0
+theme_override_font_sizes/font_size = 7
+text = "ЗОНА 5 — ЗАКРЫТО"
+
+[node name="Back" type="Button" parent="LevelPanel"]
+offset_left = 55.0
+offset_top = 106.0
+offset_right = 155.0
+offset_bottom = 119.0
+theme_override_font_sizes/font_size = 7
+text = "Назад"
+
 [connection signal="pressed" from="Buttons/NewGame" to="." method="_new_game"]
-[connection signal="pressed" from="Buttons/Levels" to="." method="_coming_soon"]
+[connection signal="pressed" from="Buttons/Levels" to="." method="_show_levels"]
 [connection signal="pressed" from="Buttons/Options" to="." method="_coming_soon"]
 [connection signal="pressed" from="Buttons/Exit" to="." method="_exit_game"]
+[connection signal="pressed" from="LevelPanel/Zone1" to="." method="_select_level" binds= [1]]
+[connection signal="pressed" from="LevelPanel/Zone2" to="." method="_select_level" binds= [2]]
+[connection signal="pressed" from="LevelPanel/Zone3" to="." method="_select_level" binds= [3]]
+[connection signal="pressed" from="LevelPanel/Zone4" to="." method="_select_level" binds= [4]]
+[connection signal="pressed" from="LevelPanel/Zone5" to="." method="_select_level" binds= [5]]
+[connection signal="pressed" from="LevelPanel/Back" to="." method="_hide_levels"]

@@ -20,6 +20,10 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 run/max_fps=60
 config/android_min_sdk_version=24
 
+[autoload]
+
+GameState="*res://scripts/game_state.gd"
+
 [display]
 
 window/size/viewport_width=320

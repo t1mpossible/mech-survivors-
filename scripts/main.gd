@@ -13,7 +13,7 @@ const TURRET_SCENE := preload("res://scenes/alien_turret.tscn")
 const MORTAR_SCENE := preload("res://scenes/alien_mortar.tscn")
 const BOSS_SCENE := preload("res://scenes/alien_boss.tscn")
 const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
-const AUTOCANNON_COOLDOWN := 1.0
+const AUTOCANNON_COOLDOWN := 1.5
 const PLANET_COUNT := 5
 const WAVES_PER_PLANET := 6
 const WAVE_DURATION := 60.0
@@ -44,6 +44,8 @@ var waves_without_powerup := 0
 var powerup_sequence := 0
 var speed_boost_time_left := 0.0
 var fire_rate_boost_time_left := 0.0
+var mech_animation_time := 0.0
+var mech_hit_flash_time := 0.0
 var planet_number := 1
 var wave_number := 1
 var wave_elapsed := 0.0
@@ -59,7 +61,7 @@ var experience := 0
 var level := 1
 var experience_to_next_level := BASE_EXPERIENCE_TO_LEVEL
 var weapon_level := 1
-var weapon_damage := 10
+var weapon_damage := 18
 var weapon_cooldown := AUTOCANNON_COOLDOWN
 var autocannon_salvo := 1
 var autocannon_evolved := false
@@ -98,10 +100,12 @@ var target_cache_time_left := 0.0
 
 @onready var initial_scout: AlienScout = $Scout
 @onready var camera: Camera2D = $Camera2D
+@onready var mech_sprite: Sprite2D = $MechSprite
 
 
 func _ready() -> void:
 	_warm_projectile_pools()
+	planet_number = GameState.selected_planet
 	initial_scout.global_position = _get_wave_spawn_position()
 	_connect_scout(initial_scout)
 	_update_experience_label()
@@ -228,8 +232,16 @@ func _process(delta: float) -> void:
 
 	var active_move_speed := move_speed * (1.5 if speed_boost_time_left > 0.0 else 1.0)
 	mech_position += movement * active_move_speed * delta
+	mech_animation_time += delta
 	mech_position.x = clampf(mech_position.x, 15.0, MAP_SIZE.x - 15.0)
 	mech_position.y = clampf(mech_position.y, 15.0, MAP_SIZE.y - 15.0)
+	mech_sprite.global_position = mech_position
+	var mech_bob := sin(mech_animation_time * 9.0) * 0.025 if movement.length() > 0.01 else 0.0
+	mech_sprite.scale = Vector2.ONE * (0.05 * (1.0 + mech_bob))
+	mech_sprite.modulate = Color(1.0, 0.5, 0.5) if mech_hit_flash_time > 0.0 else Color.WHITE
+	if movement.length() > 0.01:
+		var eight_direction_angle := roundf(movement.angle() / (PI * 0.25)) * (PI * 0.25)
+		mech_sprite.rotation = lerp_angle(mech_sprite.rotation, eight_direction_angle, minf(delta * 14.0, 1.0))
 	camera.global_position = mech_position
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as AlienScout
@@ -275,6 +287,7 @@ func _process(delta: float) -> void:
 	speed_boost_time_left = maxf(speed_boost_time_left - delta, 0.0)
 	fire_rate_boost_time_left = maxf(fire_rate_boost_time_left - delta, 0.0)
 	laser_beam_time_left = maxf(laser_beam_time_left - delta, 0.0)
+	mech_hit_flash_time = maxf(mech_hit_flash_time - delta, 0.0)
 
 	if repair_per_second > 0.0:
 		mech_health = minf(mech_max_health, mech_health + repair_per_second * delta)
@@ -391,7 +404,10 @@ func _on_scout_died(dead_scout: AlienScout) -> void:
 	if dead_scout is AlienBoss:
 		boss = null
 		if wave_number == 6:
+			var completed_planet := planet_number
 			planet_number = mini(planet_number + 1, PLANET_COUNT)
+			if planet_number > completed_planet:
+				GameState.unlock_planet(planet_number)
 			wave_number = 1
 			wave_elapsed = 0.0
 			last_wave_stage = 0
@@ -945,6 +961,7 @@ func _choose_upgrade(index: int) -> void:
 
 
 func _take_damage(amount: float) -> void:
+	mech_hit_flash_time = 0.12
 	var remaining_damage := amount * (1.0 - armor_reduction)
 	if shield_health > 0.0:
 		var absorbed := minf(shield_health, remaining_damage)
@@ -1007,20 +1024,19 @@ func _update_upgrade_list() -> void:
 
 
 func _draw() -> void:
-	# A five-times-larger alien planet. Camera movement makes the terrain scroll beneath the mech.
-	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("101d29"))
-	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("36556b"), false, 3.0)
+	# Desert-planet tint and map boundary over the hand-painted terrain texture.
+	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(0.16, 0.07, 0.03, 0.18))
+	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("b86f44"), false, 3.0)
 
 	for x in range(0, int(MAP_SIZE.x) + 1, 32):
-		draw_line(Vector2(x, 0), Vector2(x, MAP_SIZE.y), Color("142733"), 1.0)
+		draw_line(Vector2(x, 0), Vector2(x, MAP_SIZE.y), Color(0.24, 0.1, 0.04, 0.12), 1.0)
 	for y in range(0, int(MAP_SIZE.y) + 1, 32):
-		draw_line(Vector2(0, y), Vector2(MAP_SIZE.x, y), Color("142733"), 1.0)
+		draw_line(Vector2(0, y), Vector2(MAP_SIZE.x, y), Color(0.24, 0.1, 0.04, 0.12), 1.0)
 
 	for landmark in [Vector2(210, 180), Vector2(420, 650), Vector2(620, 240), Vector2(840, 720), Vector2(1040, 160), Vector2(1250, 510), Vector2(1480, 760)]:
-		draw_circle(landmark, 18.0, Color("183b40"))
-		draw_circle(landmark + Vector2(5, -4), 5.0, Color("24584b"))
+		draw_circle(landmark, 18.0, Color("5b3828"))
+		draw_circle(landmark + Vector2(5, -4), 5.0, Color("bd7441"))
 
-	_draw_mech(mech_position)
 	if laser_evolved and laser_beam_time_left > 0.0:
 		draw_line(mech_position, laser_beam_end, Color("ffb35c"), 10.0)
 		draw_line(mech_position, laser_beam_end, Color("fff0c2"), 4.0)

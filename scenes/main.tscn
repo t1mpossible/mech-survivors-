@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/alien_scout.tscn" id="2_scout"]
@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" path="res://scenes/xp_orb.tscn" id="4_orb"]
 [ext_resource type="PackedScene" path="res://scenes/hunter_missile.tscn" id="5_missile"]
 [ext_resource type="Script" path="res://scripts/pause_panel.gd" id="6_pause"]
+[ext_resource type="Texture2D" path="res://assets/desert_planet_background.png" id="7_desert"]
+[ext_resource type="Texture2D" path="res://assets/mech_desert.png" id="8_mech"]
 
 [sub_resource type="StyleBoxFlat" id="StyleXpBackground"]
 bg_color = Color(0.08, 0.11, 0.15, 0.9)
@@ -47,6 +49,17 @@ corner_radius_bottom_left = 2
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
+
+[node name="DesertBackground" type="Sprite2D" parent="."]
+show_behind_parent = true
+position = Vector2(800, 450)
+scale = Vector2(1.3, 0.75)
+texture = ExtResource("7_desert")
+
+[node name="MechSprite" type="Sprite2D" parent="."]
+position = Vector2(800, 450)
+scale = Vector2(0.05, 0.05)
+texture = ExtResource("8_mech")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(800, 450)
@@ -300,7 +313,7 @@ script = ExtResource("6_pause")
 offset_left = 85.0
 offset_top = 56.0
 offset_right = 235.0
-offset_bottom = 124.0
+offset_bottom = 138.0
 
 [node name="Title" type="Label" parent="Hud/PausePanel"]
 offset_left = 10.0
@@ -329,6 +342,14 @@ offset_right = 130.0
 offset_bottom = 56.0
 theme_override_font_sizes/font_size = 7
 text = "Продолжить"
+
+[node name="Menu" type="Button" parent="Hud/PausePanel"]
+offset_left = 20.0
+offset_top = 60.0
+offset_right = 130.0
+offset_bottom = 74.0
+theme_override_font_sizes/font_size = 7
+text = "В меню"
 
 [node name="Title" type="Label" parent="Hud/GameOver"]
 offset_left = 10.0
@@ -460,6 +481,7 @@ text = "→"
 [connection signal="pressed" from="Hud/GameOver/Restart" to="." method="_restart_game"]
 [connection signal="pressed" from="Hud/GameOver/Menu" to="." method="_return_to_menu"]
 [connection signal="pressed" from="Hud/PausePanel/Resume" to="." method="_resume_game"]
+[connection signal="pressed" from="Hud/PausePanel/Menu" to="." method="_return_to_menu"]
 [connection signal="pressed" from="Hud/Wave1" to="." method="_debug_set_wave" binds= [1]]
 [connection signal="pressed" from="Hud/Wave2" to="." method="_debug_set_wave" binds= [2]]
 [connection signal="pressed" from="Hud/Wave3" to="." method="_debug_set_wave" binds= [3]]

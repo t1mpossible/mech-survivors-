@@ -60,6 +60,7 @@ func _explode() -> void:
 
 
 func _draw() -> void:
+	draw_line(Vector2(-15, 0), Vector2(-5, 0), Color(1.0, 0.35, 0.12, 0.45), 3.0)
 	draw_circle(Vector2(-4, 0), 3.0, Color("ff873d"))
 	draw_rect(Rect2(-2, -2, 7, 4), Color("d8e9f3"))
 	draw_circle(Vector2(5, 0), 2.0, Color("ff5d4a"))

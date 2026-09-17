@@ -54,6 +54,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	draw_line(Vector2(-12, 0), Vector2(-5, 0), Color(1.0, 0.24, 0.16, 0.4), 2.0)
 	draw_circle(Vector2(-4, 0), 2.5, Color("ff7b45"))
 	draw_rect(Rect2(-1, -2, 7, 4), Color("d9e6ec"))
 	draw_circle(Vector2(6, 0), 1.5, Color("ff4b4b"))
