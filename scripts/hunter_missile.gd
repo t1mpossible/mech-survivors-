@@ -7,21 +7,42 @@ var target: AlienScout
 var damage := 20
 var speed := BASE_SPEED
 var explosion_radius := 0.0
+var active := false
 
 
 func _ready() -> void:
+	visible = false
+	process_mode = Node.PROCESS_MODE_DISABLED
 	queue_redraw()
+
+
+func activate(start_position: Vector2, new_target: AlienScout, new_damage: int, new_speed: float = BASE_SPEED, new_explosion_radius: float = 0.0) -> void:
+	global_position = start_position
+	target = new_target
+	damage = new_damage
+	speed = new_speed
+	explosion_radius = new_explosion_radius
+	active = true
+	visible = true
+	process_mode = Node.PROCESS_MODE_INHERIT
+
+
+func deactivate() -> void:
+	active = false
+	visible = false
+	target = null
+	process_mode = Node.PROCESS_MODE_DISABLED
 
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(target):
-		queue_free()
+		deactivate()
 		return
 
 	var offset := target.global_position - global_position
 	if offset.length() <= speed * delta + 6.0:
 		_explode()
-		queue_free()
+		deactivate()
 		return
 
 	global_position += offset.normalized() * speed * delta

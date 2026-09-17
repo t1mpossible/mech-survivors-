@@ -12,13 +12,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	cooldown -= delta
 	if cooldown <= 0.0 and target_position != Vector2.ZERO:
-		var bullet := ROCKET.instantiate() as EnemyRocket
-		get_parent().add_child(bullet)
-		bullet.global_position = global_position
-		bullet.direction = (target_position - global_position).normalized()
-		bullet.speed = 120.0
-		bullet.damage = 8.0
-		bullet.hit_player.connect(get_parent()._take_damage)
+		var bullet: EnemyRocket = get_parent().call("acquire_enemy_rocket") as EnemyRocket
+		if bullet != null:
+			bullet.activate(global_position, (target_position - global_position).normalized(), 90.0, 18.0, 0.5)
 		cooldown = 1.4
 	queue_redraw()
 func _draw() -> void:

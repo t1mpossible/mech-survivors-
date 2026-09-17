@@ -108,6 +108,62 @@ offset_bottom = 45.0
 theme_override_font_sizes/font_size = 7
 text = "FPS 60"
 
+[node name="Wave1" type="Button" parent="Hud"]
+offset_left = 194.0
+offset_top = 45.0
+offset_right = 214.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 6
+text = "W1"
+
+[node name="Wave2" type="Button" parent="Hud"]
+offset_left = 215.0
+offset_top = 45.0
+offset_right = 235.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 6
+text = "W2"
+
+[node name="Wave3" type="Button" parent="Hud"]
+offset_left = 236.0
+offset_top = 45.0
+offset_right = 256.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 6
+text = "W3"
+
+[node name="Wave4" type="Button" parent="Hud"]
+offset_left = 257.0
+offset_top = 45.0
+offset_right = 277.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 6
+text = "W4"
+
+[node name="Wave5" type="Button" parent="Hud"]
+offset_left = 278.0
+offset_top = 45.0
+offset_right = 298.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 6
+text = "W5"
+
+[node name="Wave6" type="Button" parent="Hud"]
+offset_left = 299.0
+offset_top = 45.0
+offset_right = 319.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 6
+text = "W6"
+
+[node name="DebugLevel" type="Button" parent="Hud"]
+offset_left = 287.0
+offset_top = 58.0
+offset_right = 319.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 6
+text = "+LV"
+
 [node name="DebugScout" type="Button" parent="Hud"]
 visible = false
 offset_left = 8.0
@@ -202,13 +258,31 @@ theme_override_colors/font_color = Color(0.42, 0.95, 0.7, 1)
 theme_override_font_sizes/font_size = 7
 text = "100/100"
 
+[node name="ShieldValue" type="Label" parent="Hud"]
+offset_left = 205.0
+offset_top = 31.0
+offset_right = 268.0
+offset_bottom = 39.0
+theme_override_colors/font_color = Color(0.5, 0.75, 1, 1)
+theme_override_font_sizes/font_size = 6
+text = "ЩИТ 0/0"
+
+[node name="UpgradeList" type="Label" parent="Hud"]
+offset_left = 8.0
+offset_top = 43.0
+offset_right = 185.0
+offset_bottom = 61.0
+theme_override_colors/font_color = Color(0.65, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 5
+text = "ПУШКА 1\nБРОНЯ 0% | ЩИТ 0"
+
 [node name="UpgradePanel" type="Panel" parent="Hud"]
 visible = false
 process_mode = 3
 offset_left = 65.0
-offset_top = 45.0
+offset_top = 38.0
 offset_right = 255.0
-offset_bottom = 135.0
+offset_bottom = 150.0
 theme_override_styles/panel = null
 
 [node name="GameOver" type="Panel" parent="Hud"]
@@ -320,6 +394,13 @@ offset_right = 168.0
 offset_bottom = 85.0
 theme_override_font_sizes/font_size = 7
 
+[node name="OptionD" type="Button" parent="Hud/UpgradePanel"]
+offset_left = 12.0
+offset_top = 90.0
+offset_right = 168.0
+offset_bottom = 103.0
+theme_override_font_sizes/font_size = 7
+
 [node name="Up" type="Button" parent="Hud"]
 offset_left = 267.0
 offset_top = 119.0
@@ -375,9 +456,17 @@ text = "→"
 [connection signal="pressed" from="Hud/UpgradePanel/OptionA" to="." method="_choose_upgrade" binds= [0]]
 [connection signal="pressed" from="Hud/UpgradePanel/OptionB" to="." method="_choose_upgrade" binds= [1]]
 [connection signal="pressed" from="Hud/UpgradePanel/OptionC" to="." method="_choose_upgrade" binds= [2]]
+[connection signal="pressed" from="Hud/UpgradePanel/OptionD" to="." method="_choose_upgrade" binds= [3]]
 [connection signal="pressed" from="Hud/GameOver/Restart" to="." method="_restart_game"]
 [connection signal="pressed" from="Hud/GameOver/Menu" to="." method="_return_to_menu"]
 [connection signal="pressed" from="Hud/PausePanel/Resume" to="." method="_resume_game"]
+[connection signal="pressed" from="Hud/Wave1" to="." method="_debug_set_wave" binds= [1]]
+[connection signal="pressed" from="Hud/Wave2" to="." method="_debug_set_wave" binds= [2]]
+[connection signal="pressed" from="Hud/Wave3" to="." method="_debug_set_wave" binds= [3]]
+[connection signal="pressed" from="Hud/Wave4" to="." method="_debug_set_wave" binds= [4]]
+[connection signal="pressed" from="Hud/Wave5" to="." method="_debug_set_wave" binds= [5]]
+[connection signal="pressed" from="Hud/Wave6" to="." method="_debug_set_wave" binds= [6]]
+[connection signal="pressed" from="Hud/DebugLevel" to="." method="_debug_level_up"]
 [connection signal="pressed" from="Hud/DebugScout" to="." method="_debug_spawn_scout"]
 [connection signal="pressed" from="Hud/DebugBrute" to="." method="_debug_spawn_brute"]
 [connection signal="pressed" from="Hud/DebugElite" to="." method="_debug_spawn_elite"]

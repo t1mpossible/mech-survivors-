@@ -27,14 +27,10 @@ func _process(delta: float) -> void:
 
 
 func _launch_side_rocket(side_offset: Vector2) -> void:
-	var rocket := ENEMY_ROCKET.instantiate() as EnemyRocket
-	get_parent().add_child(rocket)
-	rocket.global_position = global_position + side_offset
-	rocket.direction = (target_position - rocket.global_position).normalized()
-	rocket.speed = 55.0
-	rocket.damage = 12.0
-	rocket.homing_time = 1.0
-	rocket.hit_player.connect(get_parent()._take_damage)
+	var rocket: EnemyRocket = get_parent().call("acquire_enemy_rocket") as EnemyRocket
+	if rocket != null:
+		var start_position := global_position + side_offset
+		rocket.activate(start_position, (target_position - start_position).normalized(), 55.0, 12.0, 1.0)
 
 
 func _draw() -> void:

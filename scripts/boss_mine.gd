@@ -6,14 +6,21 @@ const ENEMY_ROCKET := preload("res://scenes/enemy_rocket.tscn")
 var direction := Vector2.DOWN
 var speed := 30.0
 var fall_time := 1.4
+var homing_time := 0.0
 var fragment_damage := 15.0
 
 
 func _ready() -> void:
+	add_to_group("enemy_hazards")
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
+	if homing_time > 0.0:
+		var main := get_parent()
+		if main != null:
+			direction = (main.get("mech_position") - global_position).normalized()
+		homing_time -= delta
 	global_position += direction * speed * delta
 	fall_time -= delta
 	if fall_time <= 0.0:
@@ -23,14 +30,9 @@ func _process(delta: float) -> void:
 
 func _split() -> void:
 	for fragment_direction in [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT]:
-		var fragment := ENEMY_ROCKET.instantiate() as EnemyRocket
-		get_parent().add_child(fragment)
-		fragment.global_position = global_position
-		fragment.direction = fragment_direction
-		fragment.speed = 65.0
-		fragment.damage = fragment_damage
-		fragment.lifetime = 2.5
-		fragment.hit_player.connect(get_parent()._take_damage)
+		var fragment: EnemyRocket = get_parent().call("acquire_enemy_rocket") as EnemyRocket
+		if fragment != null:
+			fragment.activate(global_position, fragment_direction, 65.0, fragment_damage, 0.0, 2.5)
 
 
 func _draw() -> void:

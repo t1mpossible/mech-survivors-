@@ -54,19 +54,15 @@ func take_damage(amount: int) -> void:
 
 func _launch_rocket_pair() -> void:
 	for side in [-30.0, 30.0]:
-		var rocket := ENEMY_ROCKET.instantiate() as EnemyRocket
-		get_parent().add_child(rocket)
-		rocket.global_position = global_position + Vector2(side, -13)
-		rocket.direction = (target_position - rocket.global_position).normalized()
-		rocket.speed = 36.0
-		rocket.damage = 19.0
-		rocket.homing_time = 3.0
-		rocket.lifetime = 6.0
-		rocket.scale = Vector2(1.6, 1.6)
-		rocket.hit_player.connect(get_parent()._take_damage)
+		var rocket: EnemyRocket = get_parent().call("acquire_enemy_rocket") as EnemyRocket
+		if rocket != null:
+			var start_position := global_position + Vector2(side, -13)
+			rocket.activate(start_position, (target_position - start_position).normalized(), 36.0, 19.0, 3.0, 6.0, Vector2(1.6, 1.6))
 
 
 func _launch_mine_pair() -> void:
+	if not get_parent().call("allow_enemy_hazard"):
+		return
 	for side in [-30.0, 30.0]:
 		var mine := BOSS_MINE.instantiate() as BossMine
 		get_parent().add_child(mine)

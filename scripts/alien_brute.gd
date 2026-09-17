@@ -27,15 +27,9 @@ func _process(delta: float) -> void:
 
 
 func _launch_rocket() -> void:
-	var rocket := ENEMY_ROCKET.instantiate() as EnemyRocket
-	get_parent().add_child(rocket)
-	rocket.global_position = global_position
-	rocket.direction = (target_position - global_position).normalized()
-	rocket.speed = 42.0
-	rocket.damage = 7.0
-	# The small rocket gets one second of guidance, then continues in a straight line.
-	rocket.homing_time = 1.0
-	rocket.hit_player.connect(get_parent()._take_damage)
+	var rocket: EnemyRocket = get_parent().call("acquire_enemy_rocket") as EnemyRocket
+	if rocket != null:
+		rocket.activate(global_position, (target_position - global_position).normalized(), 42.0, 7.0, 1.0)
 
 
 func _draw() -> void:

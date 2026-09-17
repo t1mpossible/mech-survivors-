@@ -5,21 +5,40 @@ const SPEED := 150.0
 
 var target: AlienScout
 var damage := 10
+var active := false
 
 
 func _ready() -> void:
+	visible = false
+	process_mode = Node.PROCESS_MODE_DISABLED
 	queue_redraw()
+
+
+func activate(start_position: Vector2, new_target: AlienScout, new_damage: int) -> void:
+	global_position = start_position
+	target = new_target
+	damage = new_damage
+	active = true
+	visible = true
+	process_mode = Node.PROCESS_MODE_INHERIT
+
+
+func deactivate() -> void:
+	active = false
+	visible = false
+	target = null
+	process_mode = Node.PROCESS_MODE_DISABLED
 
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(target):
-		queue_free()
+		deactivate()
 		return
 
 	var offset := target.global_position - global_position
 	if offset.length() <= SPEED * delta + 5.0:
 		target.take_damage(damage)
-		queue_free()
+		deactivate()
 		return
 
 	global_position += offset.normalized() * SPEED * delta
