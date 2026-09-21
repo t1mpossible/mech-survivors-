@@ -2,12 +2,17 @@ class_name HunterMissile
 extends Node2D
 
 const BASE_SPEED := 95.0
+const ORPHAN_FLIGHT_TIME := 4.5
+const PROJECTILE_ART := preload("res://assets/projectiles_v1.png")
 
 var target: AlienScout
 var damage := 20
 var speed := BASE_SPEED
 var explosion_radius := 0.0
 var active := false
+var visual_time := 0.0
+var travel_direction := Vector2.RIGHT
+var orphan_flight_time := 0.0
 
 
 func _ready() -> void:
@@ -22,6 +27,11 @@ func activate(start_position: Vector2, new_target: AlienScout, new_damage: int, 
 	damage = new_damage
 	speed = new_speed
 	explosion_radius = new_explosion_radius
+	visual_time = 0.0
+	orphan_flight_time = 0.0
+	if is_instance_valid(target):
+		travel_direction = (target.global_position - global_position).normalized()
+		rotation = travel_direction.angle()
 	active = true
 	visible = true
 	process_mode = Node.PROCESS_MODE_INHERIT
@@ -35,18 +45,35 @@ func deactivate() -> void:
 
 
 func _process(delta: float) -> void:
+	visual_time += delta
+	if orphan_flight_time > 0.0:
+		global_position += travel_direction * speed * delta
+		orphan_flight_time -= delta
+		if orphan_flight_time <= 0.0:
+			deactivate()
+		else:
+			queue_redraw()
+		return
 	if not is_instance_valid(target):
-		deactivate()
+		_begin_orphan_flight()
 		return
 
 	var offset := target.global_position - global_position
+	travel_direction = offset.normalized()
 	if offset.length() <= speed * delta + 6.0:
 		_explode()
 		deactivate()
 		return
 
-	global_position += offset.normalized() * speed * delta
-	rotation = offset.angle()
+	global_position += travel_direction * speed * delta
+	rotation = travel_direction.angle()
+	queue_redraw()
+
+
+func _begin_orphan_flight() -> void:
+	target = null
+	orphan_flight_time = ORPHAN_FLIGHT_TIME
+	queue_redraw()
 
 
 func _explode() -> void:
@@ -60,9 +87,11 @@ func _explode() -> void:
 
 
 func _draw() -> void:
-	draw_line(Vector2(-15, 0), Vector2(-5, 0), Color(1.0, 0.35, 0.12, 0.45), 3.0)
-	draw_circle(Vector2(-4, 0), 3.0, Color("ff873d"))
-	draw_rect(Rect2(-2, -2, 7, 4), Color("d8e9f3"))
-	draw_circle(Vector2(5, 0), 2.0, Color("ff5d4a"))
-	draw_line(Vector2(1, -2), Vector2(1, -5), Color("d8e9f3"), 1.0)
-	draw_line(Vector2(1, 2), Vector2(1, 5), Color("d8e9f3"), 1.0)
+	_draw_projectile_frame(1, Vector2(27, 15))
+
+
+func _draw_projectile_frame(column: int, size: Vector2) -> void:
+	var frame := int(visual_time * 12.0) % 2
+	var cell := Vector2(PROJECTILE_ART.get_width() / 4.0, PROJECTILE_ART.get_height() / 2.0)
+	var source := Rect2(Vector2(column * cell.x, frame * cell.y), cell)
+	draw_texture_rect_region(PROJECTILE_ART, Rect2(-size * 0.5, size), source)

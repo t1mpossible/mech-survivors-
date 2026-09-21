@@ -11,6 +11,7 @@ func _ready() -> void:
 	max_health = 300
 	health = max_health
 	contact_damage_per_second = 22.0
+	hit_radius = 24.0
 	experience_amount = 75
 	xp_tier = XpOrb.Tier.ELITE_BLUE
 	super._ready()
@@ -34,15 +35,4 @@ func _launch_side_rocket(side_offset: Vector2) -> void:
 
 
 func _draw() -> void:
-	# Elite launcher has two visible wing pods, which are also its firing points.
-	draw_circle(Vector2(2, 6), 23.0, Color("0b111b"))
-	draw_circle(Vector2.ZERO, 20.0, Color("2569a8"))
-	draw_rect(Rect2(-15, -10, 30, 20), Color("377fc4"))
-	draw_circle(Vector2(-7, -3), 4.0, Color("9ee8ff"))
-	draw_circle(Vector2(7, -3), 4.0, Color("9ee8ff"))
-	draw_rect(Rect2(-27, -5, 11, 10), Color("173c70"))
-	draw_rect(Rect2(16, -5, 11, 10), Color("173c70"))
-	draw_circle(Vector2(-23, 0), 3.0, Color("8ddcff"))
-	draw_circle(Vector2(23, 0), 3.0, Color("8ddcff"))
-	draw_rect(Rect2(-22, -29, 44, 4), Color("08111c"))
-	draw_rect(Rect2(-21, -28, 42.0 * float(health) / float(max_health), 2), Color("5cc8ff"))
+	_draw_enemy_art(2, 56.0, Color("5cc8ff"))

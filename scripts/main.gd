@@ -13,6 +13,7 @@ const TURRET_SCENE := preload("res://scenes/alien_turret.tscn")
 const MORTAR_SCENE := preload("res://scenes/alien_mortar.tscn")
 const BOSS_SCENE := preload("res://scenes/alien_boss.tscn")
 const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
+const HERO_WEAPON_EFFECTS := preload("res://assets/hero_weapon_effects_v1.png")
 const AUTOCANNON_COOLDOWN := 1.5
 const PLANET_COUNT := 5
 const WAVES_PER_PLANET := 6
@@ -26,6 +27,7 @@ const MAX_XP_ORBS := 180
 const TARGET_REFRESH_INTERVAL := 0.15
 
 var mech_position := MAP_SIZE / 2.0
+var tread_travel := 0.0
 var touch_direction := {"up": false, "down": false, "left": false, "right": false}
 var cannon_time_left := 0.0
 var small_spawn_time_left := 0.2
@@ -44,7 +46,6 @@ var waves_without_powerup := 0
 var powerup_sequence := 0
 var speed_boost_time_left := 0.0
 var fire_rate_boost_time_left := 0.0
-var mech_animation_time := 0.0
 var mech_hit_flash_time := 0.0
 var planet_number := 1
 var wave_number := 1
@@ -87,6 +88,7 @@ var shuriken_angle := 0.0
 var shuriken_radius := 40.0
 var shuriken_hit_time_left := 0.0
 var shuriken_evolved := false
+var weapon_visual_time := 0.0
 var upgrade_open := false
 var mech_destroyed := false
 var manual_paused := false
@@ -231,17 +233,20 @@ func _process(delta: float) -> void:
 		movement = movement.normalized()
 
 	var active_move_speed := move_speed * (1.5 if speed_boost_time_left > 0.0 else 1.0)
+	weapon_visual_time += delta
+	var previous_mech_position := mech_position
 	mech_position += movement * active_move_speed * delta
-	mech_animation_time += delta
 	mech_position.x = clampf(mech_position.x, 15.0, MAP_SIZE.x - 15.0)
 	mech_position.y = clampf(mech_position.y, 15.0, MAP_SIZE.y - 15.0)
+	tread_travel = fmod(tread_travel + mech_position.distance_to(previous_mech_position) / 8.0, 1000.0)
+	(mech_sprite.material as ShaderMaterial).set_shader_parameter("travel", tread_travel)
 	mech_sprite.global_position = mech_position
-	var mech_bob := sin(mech_animation_time * 9.0) * 0.025 if movement.length() > 0.01 else 0.0
-	mech_sprite.scale = Vector2.ONE * (0.05 * (1.0 + mech_bob))
+	# A tank chassis stays rigid: one frame is held while it travels smoothly.
+	mech_sprite.scale = Vector2.ONE * 0.112
 	mech_sprite.modulate = Color(1.0, 0.5, 0.5) if mech_hit_flash_time > 0.0 else Color.WHITE
 	if movement.length() > 0.01:
-		var eight_direction_angle := roundf(movement.angle() / (PI * 0.25)) * (PI * 0.25)
-		mech_sprite.rotation = lerp_angle(mech_sprite.rotation, eight_direction_angle, minf(delta * 14.0, 1.0))
+		mech_sprite.frame = _get_mech_direction_frame(movement)
+	mech_sprite.rotation = 0.0
 	camera.global_position = mech_position
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as AlienScout
@@ -256,7 +261,6 @@ func _process(delta: float) -> void:
 
 	_update_wave_progress(delta)
 	_update_wave_spawns(delta)
-
 	for rocket_node in get_tree().get_nodes_in_group("enemy_rockets"):
 		var enemy_rocket := rocket_node as EnemyRocket
 		if enemy_rocket != null and enemy_rocket.active:
@@ -323,14 +327,26 @@ func _process(delta: float) -> void:
 		shuriken_angle += delta * 5.36
 		shuriken_hit_time_left -= delta
 		if shuriken_hit_time_left <= 0.0:
+			var shuriken_hit_radius := 14.0 if shuriken_evolved else 10.5
 			for angle_offset in _get_shuriken_angles():
 				var shuriken_position := mech_position + Vector2(cos(shuriken_angle + angle_offset), sin(shuriken_angle + angle_offset)) * shuriken_radius
 				for enemy_node in get_tree().get_nodes_in_group("enemies"):
 					var enemy := enemy_node as AlienScout
-					if enemy != null and enemy.global_position.distance_to(shuriken_position) <= 18.0:
+					if enemy != null and enemy.global_position.distance_to(shuriken_position) <= shuriken_hit_radius + enemy.hit_radius:
 						enemy.take_damage(shuriken_damage)
 			shuriken_hit_time_left = 0.25 / _get_fire_rate_multiplier()
 	queue_redraw()
+
+
+func _get_mech_direction_frame(direction: Vector2) -> int:
+	# Sprite-sheet order: down, down-right, right, up-right / up, up-left, left, down-left.
+	if absf(direction.x) < 0.38:
+		return 0 if direction.y > 0.0 else 4
+	if absf(direction.y) < 0.38:
+		return 2 if direction.x > 0.0 else 6
+	if direction.x > 0.0:
+		return 1 if direction.y > 0.0 else 3
+	return 7 if direction.y > 0.0 else 5
 
 
 func _set_touch_direction(direction: String, pressed: bool) -> void:
@@ -1024,30 +1040,37 @@ func _update_upgrade_list() -> void:
 
 
 func _draw() -> void:
-	# Desert-planet tint and map boundary over the hand-painted terrain texture.
+	# A subtle tint over the hand-painted terrain. Scenery lives in the background
+	# texture so the playable area does not look like a debug grid.
 	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(0.16, 0.07, 0.03, 0.18))
-	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("b86f44"), false, 3.0)
-
-	for x in range(0, int(MAP_SIZE.x) + 1, 32):
-		draw_line(Vector2(x, 0), Vector2(x, MAP_SIZE.y), Color(0.24, 0.1, 0.04, 0.12), 1.0)
-	for y in range(0, int(MAP_SIZE.y) + 1, 32):
-		draw_line(Vector2(0, y), Vector2(MAP_SIZE.x, y), Color(0.24, 0.1, 0.04, 0.12), 1.0)
-
-	for landmark in [Vector2(210, 180), Vector2(420, 650), Vector2(620, 240), Vector2(840, 720), Vector2(1040, 160), Vector2(1250, 510), Vector2(1480, 760)]:
-		draw_circle(landmark, 18.0, Color("5b3828"))
-		draw_circle(landmark + Vector2(5, -4), 5.0, Color("bd7441"))
 
 	if laser_evolved and laser_beam_time_left > 0.0:
-		draw_line(mech_position, laser_beam_end, Color("ffb35c"), 10.0)
-		draw_line(mech_position, laser_beam_end, Color("fff0c2"), 4.0)
+		var burst_width := 10.0 + sin(weapon_visual_time * 28.0) * 1.5
+		draw_line(mech_position, laser_beam_end, Color("ff9a38"), burst_width)
+		draw_line(mech_position, laser_beam_end, Color("fff3c4"), 4.0)
+		_draw_hero_weapon_effect(0, mech_position, Vector2(26, 18), (laser_beam_end - mech_position).angle())
+		_draw_hero_weapon_effect(1, laser_beam_end, Vector2(28, 28), 0.0)
 	elif laser_unlocked and is_instance_valid(laser_target):
-		draw_line(mech_position, laser_target.global_position, Color("ff5864"), 2.0)
+		var beam_direction := laser_target.global_position - mech_position
+		draw_line(mech_position, laser_target.global_position, Color("41cfff"), 3.0 + sin(weapon_visual_time * 22.0) * 0.5)
+		draw_line(mech_position, laser_target.global_position, Color("e7fbff"), 1.0)
+		_draw_hero_weapon_effect(0, mech_position, Vector2(20, 14), beam_direction.angle())
+		_draw_hero_weapon_effect(1, laser_target.global_position, Vector2(17, 17), 0.0)
 	if shuriken_unlocked:
 		for angle_offset in _get_shuriken_angles():
 			var shuriken_position := mech_position + Vector2(cos(shuriken_angle + angle_offset), sin(shuriken_angle + angle_offset)) * shuriken_radius
-			draw_circle(shuriken_position, 8.0, Color("1b2634"))
-			draw_line(shuriken_position + Vector2(-8, -8), shuriken_position + Vector2(8, 8), Color("e7f3ff"), 3.0)
-			draw_line(shuriken_position + Vector2(8, -8), shuriken_position + Vector2(-8, 8), Color("e7f3ff"), 3.0)
+			var shuriken_column := 3 if shuriken_evolved else 2
+			var shuriken_size := Vector2(25, 25) if shuriken_evolved else Vector2(19, 19)
+			_draw_hero_weapon_effect(shuriken_column, shuriken_position, shuriken_size, shuriken_angle + angle_offset)
+
+
+func _draw_hero_weapon_effect(column: int, position: Vector2, size: Vector2, effect_rotation: float) -> void:
+	var frame := int(weapon_visual_time * 12.0) % 2
+	var cell := Vector2(HERO_WEAPON_EFFECTS.get_width() / 4.0, HERO_WEAPON_EFFECTS.get_height() / 2.0)
+	var source := Rect2(Vector2(column * cell.x, frame * cell.y), cell)
+	draw_set_transform(position, effect_rotation)
+	draw_texture_rect_region(HERO_WEAPON_EFFECTS, Rect2(-size * 0.5, size), source)
+	draw_set_transform(Vector2.ZERO, 0.0)
 
 
 func _draw_mech(center: Vector2) -> void:

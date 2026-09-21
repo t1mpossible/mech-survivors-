@@ -1,11 +1,6 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://scripts/alien_scout.gd" id="1_scout"]
-[ext_resource type="Texture2D" path="res://assets/alien_scout_desert.png" id="2_scout_texture"]
 
 [node name="AlienScout" type="Node2D"]
 script = ExtResource("1_scout")
-
-[node name="Sprite" type="Sprite2D" parent="."]
-scale = Vector2(0.035, 0.035)
-texture = ExtResource("2_scout_texture")

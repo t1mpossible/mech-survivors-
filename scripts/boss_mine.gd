@@ -2,12 +2,14 @@ class_name BossMine
 extends Node2D
 
 const ENEMY_ROCKET := preload("res://scenes/enemy_rocket.tscn")
+const PROJECTILE_ART := preload("res://assets/projectiles_v1.png")
 
 var direction := Vector2.DOWN
 var speed := 30.0
 var fall_time := 1.4
 var homing_time := 0.0
 var fragment_damage := 15.0
+var visual_time := 0.0
 
 
 func _ready() -> void:
@@ -16,16 +18,19 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	visual_time += delta
 	if homing_time > 0.0:
 		var main := get_parent()
 		if main != null:
 			direction = (main.get("mech_position") - global_position).normalized()
 		homing_time -= delta
 	global_position += direction * speed * delta
+	rotation += delta * 1.5
 	fall_time -= delta
 	if fall_time <= 0.0:
 		_split()
 		queue_free()
+	queue_redraw()
 
 
 func _split() -> void:
@@ -36,6 +41,7 @@ func _split() -> void:
 
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, 7.0, Color("191321"))
-	draw_circle(Vector2.ZERO, 5.0, Color("b33f69"))
-	draw_circle(Vector2.ZERO, 2.0, Color("ffd06a"))
+	var frame := int(visual_time * 8.0) % 2
+	var cell := Vector2(PROJECTILE_ART.get_width() / 4.0, PROJECTILE_ART.get_height() / 2.0)
+	var source := Rect2(Vector2(3.0 * cell.x, frame * cell.y), cell)
+	draw_texture_rect_region(PROJECTILE_ART, Rect2(-Vector2(21, 21) * 0.5, Vector2(21, 21)), source)

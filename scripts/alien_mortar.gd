@@ -7,6 +7,7 @@ func _ready() -> void:
 	movement_speed = 7.0
 	max_health = 150 if split_child else 300
 	health = max_health
+	hit_radius = 14.0 if split_child else 22.0
 	experience_amount = 30 if split_child else 75
 	xp_tier = XpOrb.Tier.LARGE_RED
 	super._ready()
@@ -40,15 +41,4 @@ func take_damage(amount: int) -> void:
 
 
 func _draw() -> void:
-	var body_color := Color("84518d") if split_child else Color("633b8f")
-	var armor_color := Color("b977d6") if split_child else Color("9e63cc")
-	var size := 13.0 if split_child else 20.0
-	draw_circle(Vector2(2, 5), size + 2.0, Color("100e1b"))
-	draw_circle(Vector2.ZERO, size, body_color)
-	draw_rect(Rect2(-size, 5, size * 2.0, 8), Color("342342"))
-	draw_rect(Rect2(-size + 3.0, 7, size * 2.0 - 6.0, 3), Color("73527e"))
-	draw_rect(Rect2(-5, -size - 8, 10, size + 10), armor_color)
-	draw_circle(Vector2.ZERO, 5.0, Color("f4d36b"))
-	draw_circle(Vector2.ZERO, 2.0, Color("fff4bd"))
-	draw_rect(Rect2(-size, -size - 14, size * 2.0, 4), Color("160d18"))
-	draw_rect(Rect2(-size + 1.0, -size - 13, (size * 2.0 - 2.0) * float(health) / float(max_health), 2), Color("d880ff"))
+	_draw_enemy_art(5, 34.0 if split_child else 52.0, Color("d880ff"))

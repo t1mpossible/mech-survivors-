@@ -15,6 +15,7 @@ func _ready() -> void:
 	max_health = PHASE_HEALTH
 	health = PHASE_HEALTH
 	contact_damage_per_second = 24.0
+	hit_radius = 36.0
 	experience_amount = 500
 	xp_tier = XpOrb.Tier.ELITE_BLUE
 	super._ready()
@@ -72,14 +73,4 @@ func _launch_mine_pair() -> void:
 
 
 func _draw() -> void:
-	# Four turret sockets: upper pair launches rockets, lower pair launches mines.
-	draw_circle(Vector2(3, 8), 42.0, Color("09111c"))
-	draw_rect(Rect2(-36, -25, 72, 54), Color("586879"))
-	draw_rect(Rect2(-28, -19, 56, 40), Color("7d90a0"))
-	draw_circle(Vector2.ZERO, 15.0, Color("aee6ee"))
-	draw_circle(Vector2.ZERO, 7.0, Color("47a6c5"))
-	for turret in [Vector2(-30, -19), Vector2(30, -19), Vector2(-30, 19), Vector2(30, 19)]:
-		draw_circle(turret, 10.0, Color("293746"))
-		draw_rect(Rect2(turret + Vector2(-4, -10), Vector2(8, 14)), Color("d1e1e4"))
-	draw_rect(Rect2(-48, -54, 96, 5), Color("0d1420"))
-	draw_rect(Rect2(-47, -53, 94.0 * float(health) / float(max_health), 3), Color("54d8e6"))
+	_draw_enemy_art(6, 94.0, Color("ff654f"))
