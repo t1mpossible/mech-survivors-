@@ -13,6 +13,8 @@ const TURRET_SCENE := preload("res://scenes/alien_turret.tscn")
 const MORTAR_SCENE := preload("res://scenes/alien_mortar.tscn")
 const BOSS_SCENE := preload("res://scenes/alien_boss.tscn")
 const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
+const COMBAT_EFFECT := preload("res://scenes/combat_effect.tscn")
+const COMBAT_POPUP := preload("res://scenes/combat_popup.tscn")
 const HERO_WEAPON_EFFECTS := preload("res://assets/hero_weapon_effects_v1.png")
 const AUTOCANNON_COOLDOWN := 1.5
 const PLANET_COUNT := 5
@@ -24,6 +26,8 @@ const MAX_PLASMA_ROUNDS := 100
 const MAX_HUNTER_MISSILES := 24
 const MAX_ENEMY_ROCKETS := 150
 const MAX_XP_ORBS := 180
+const MAX_COMBAT_EFFECTS := 64
+const MAX_COMBAT_POPUPS := 10
 const TARGET_REFRESH_INTERVAL := 0.15
 
 var mech_position := MAP_SIZE / 2.0
@@ -47,6 +51,8 @@ var powerup_sequence := 0
 var speed_boost_time_left := 0.0
 var fire_rate_boost_time_left := 0.0
 var mech_hit_flash_time := 0.0
+var camera_shake_time_left := 0.0
+var camera_shake_strength := 0.0
 var planet_number := 1
 var wave_number := 1
 var wave_elapsed := 0.0
@@ -97,6 +103,8 @@ var plasma_round_pool: Array[PlasmaRound] = []
 var hunter_missile_pool: Array[HunterMissile] = []
 var enemy_rocket_pool: Array[EnemyRocket] = []
 var xp_orb_pool: Array[XpOrb] = []
+var combat_effect_pool: Array[CombatEffect] = []
+var combat_popup_pool: Array[Node2D] = []
 var nearest_target: AlienScout
 var target_cache_time_left := 0.0
 
@@ -126,6 +134,10 @@ func _warm_projectile_pools() -> void:
 		_create_enemy_rocket()
 	for index in range(36):
 		_create_xp_orb()
+	for index in range(24):
+		_create_combat_effect()
+	for index in range(4):
+		_create_combat_popup()
 
 
 func _create_plasma_round() -> PlasmaRound:
@@ -158,6 +170,46 @@ func acquire_hunter_missile() -> HunterMissile:
 	if hunter_missile_pool.size() >= MAX_HUNTER_MISSILES:
 		return null
 	return _create_hunter_missile()
+
+
+func _create_combat_effect() -> CombatEffect:
+	var effect := COMBAT_EFFECT.instantiate() as CombatEffect
+	add_child(effect)
+	combat_effect_pool.append(effect)
+	return effect
+
+
+func _create_combat_popup() -> Node2D:
+	var popup := COMBAT_POPUP.instantiate() as Node2D
+	add_child(popup)
+	combat_popup_pool.append(popup)
+	return popup
+
+
+func spawn_combat_popup(world_position: Vector2, message: String, text_color: Color) -> void:
+	for popup in combat_popup_pool:
+		if not bool(popup.get("active")):
+			popup.call("activate", world_position, message, text_color)
+			return
+	if combat_popup_pool.size() < MAX_COMBAT_POPUPS:
+		_create_combat_popup().call("activate", world_position, message, text_color)
+
+
+func spawn_combat_effect(world_position: Vector2, effect_type: int, effect_scale: float = 1.0) -> void:
+	var effect_activated := false
+	for effect in combat_effect_pool:
+		if not effect.active:
+			effect.activate(world_position, effect_type, effect_scale)
+			effect_activated = true
+			break
+	if not effect_activated and combat_effect_pool.size() < MAX_COMBAT_EFFECTS:
+		_create_combat_effect().activate(world_position, effect_type, effect_scale)
+	if effect_type == CombatEffect.Type.ROCKET_EXPLOSION:
+		_start_camera_shake(1.2 * effect_scale)
+	elif effect_type == CombatEffect.Type.PLAYER_IMPACT:
+		_start_camera_shake(1.0)
+	elif effect_type == CombatEffect.Type.PLASMA_IMPACT:
+		_start_camera_shake(0.22)
 
 
 func _create_enemy_rocket() -> EnemyRocket:
@@ -220,7 +272,9 @@ func acquire_xp_orb() -> XpOrb:
 
 func _process(delta: float) -> void:
 	$Hud/Fps.text = "FPS %d" % Engine.get_frames_per_second()
+	_update_camera_shake(delta)
 	if manual_paused or upgrade_open or mech_destroyed:
+		_position_camera()
 		return
 
 	var movement := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -247,7 +301,7 @@ func _process(delta: float) -> void:
 	if movement.length() > 0.01:
 		mech_sprite.frame = _get_mech_direction_frame(movement)
 	mech_sprite.rotation = 0.0
-	camera.global_position = mech_position
+	_position_camera()
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as AlienScout
 		if enemy != null:
@@ -567,6 +621,8 @@ func _spawn_health_pack() -> void:
 func _collect_health_pack(heal_fraction: float) -> void:
 	mech_health = minf(mech_max_health, mech_health + mech_max_health * heal_fraction)
 	$Hud/EnemyStatus.text = "АПТЕЧКА: +25% HP"
+	spawn_combat_effect(mech_position, CombatEffect.Type.REPAIR)
+	spawn_combat_popup(mech_position, "+25% HP", Color("78f7ad"))
 	_update_health_label()
 
 
@@ -595,9 +651,13 @@ func _collect_powerup(powerup_type: int) -> void:
 	if powerup_type == Powerup.Type.SPEED:
 		speed_boost_time_left = 12.0
 		$Hud/EnemyStatus.text = "УСКОРЕНИЕ: +50% СКОРОСТИ"
+		spawn_combat_effect(mech_position, CombatEffect.Type.SPEED_BOOST)
+		spawn_combat_popup(mech_position, "СКОРОСТЬ +50%", Color("61d7ff"))
 	else:
 		fire_rate_boost_time_left = 12.0
 		$Hud/EnemyStatus.text = "ПЕРЕГРУЗКА: +45% СКОРОСТРЕЛЬНОСТИ"
+		spawn_combat_effect(mech_position, CombatEffect.Type.FIRE_RATE_BOOST)
+		spawn_combat_popup(mech_position, "ТЕМП +45%", Color("ffb45a"))
 
 
 func _get_fire_rate_multiplier() -> float:
@@ -978,6 +1038,8 @@ func _choose_upgrade(index: int) -> void:
 
 func _take_damage(amount: float) -> void:
 	mech_hit_flash_time = 0.12
+	if amount >= 2.0:
+		_start_camera_shake(0.75)
 	var remaining_damage := amount * (1.0 - armor_reduction)
 	if shield_health > 0.0:
 		var absorbed := minf(shield_health, remaining_damage)
@@ -989,6 +1051,25 @@ func _take_damage(amount: float) -> void:
 		mech_destroyed = true
 		get_tree().paused = true
 		$Hud/GameOver.visible = true
+
+
+func _start_camera_shake(strength: float) -> void:
+	camera_shake_time_left = maxf(camera_shake_time_left, 0.11)
+	camera_shake_strength = minf(maxf(camera_shake_strength, strength), 2.2)
+
+
+func _update_camera_shake(delta: float) -> void:
+	camera_shake_time_left = maxf(camera_shake_time_left - delta, 0.0)
+	if camera_shake_time_left <= 0.0:
+		camera_shake_strength = 0.0
+
+
+func _position_camera() -> void:
+	var offset := Vector2.ZERO
+	if camera_shake_time_left > 0.0:
+		var fade := camera_shake_time_left / 0.11
+		offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * camera_shake_strength * fade
+	camera.global_position = mech_position + offset
 
 
 func _restart_game() -> void:

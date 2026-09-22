@@ -57,12 +57,19 @@ func take_damage(amount: int) -> void:
 	damage_flash_time = 0.1
 	health_changed.emit(health, max_health)
 	if health == 0:
+		_spawn_death_effect()
 		died.emit()
 		queue_free()
 
 
 func _draw() -> void:
 	_draw_enemy_art(0, 30.0, Color("f06a9d"))
+
+
+func _spawn_death_effect() -> void:
+	var game := get_parent()
+	if game != null and game.has_method("spawn_combat_effect"):
+		game.spawn_combat_effect(global_position, CombatEffect.Type.ENEMY_DEATH, maxf(hit_radius / 14.0, 0.8))
 
 
 func _draw_enemy_art(kind: int, width: float, bar_color: Color) -> void:

@@ -53,6 +53,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	lifetime -= delta
 	if global_position.distance_to(player_position) < 9.0:
+		_spawn_player_impact()
 		hit_player.emit(damage)
 		deactivate()
 	elif lifetime <= 0.0:
@@ -64,7 +65,14 @@ func _draw() -> void:
 
 
 func _draw_projectile_frame(column: int, size: Vector2) -> void:
+	draw_line(Vector2(-17.0, 0.0), Vector2(-4.0, 0.0), Color(1.0, 0.22, 0.14, 0.52), 2.4)
 	var frame := int(visual_time * 12.0) % 2
 	var cell := Vector2(PROJECTILE_ART.get_width() / 4.0, PROJECTILE_ART.get_height() / 2.0)
 	var source := Rect2(Vector2(column * cell.x, frame * cell.y), cell)
 	draw_texture_rect_region(PROJECTILE_ART, Rect2(-size * 0.5, size), source)
+
+
+func _spawn_player_impact() -> void:
+	var game := get_parent()
+	if game != null and game.has_method("spawn_combat_effect"):
+		game.spawn_combat_effect(global_position, CombatEffect.Type.PLAYER_IMPACT)

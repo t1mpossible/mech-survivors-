@@ -77,6 +77,7 @@ func _begin_orphan_flight() -> void:
 
 
 func _explode() -> void:
+	_spawn_explosion()
 	if explosion_radius <= 0.0:
 		target.take_damage(damage)
 		return
@@ -91,7 +92,15 @@ func _draw() -> void:
 
 
 func _draw_projectile_frame(column: int, size: Vector2) -> void:
+	draw_line(Vector2(-22.0, 0.0), Vector2(-5.0, 0.0), Color(1.0, 0.46, 0.16, 0.62), 3.0)
 	var frame := int(visual_time * 12.0) % 2
 	var cell := Vector2(PROJECTILE_ART.get_width() / 4.0, PROJECTILE_ART.get_height() / 2.0)
 	var source := Rect2(Vector2(column * cell.x, frame * cell.y), cell)
 	draw_texture_rect_region(PROJECTILE_ART, Rect2(-size * 0.5, size), source)
+
+
+func _spawn_explosion() -> void:
+	var game := get_parent().get_parent()
+	if game != null and game.has_method("spawn_combat_effect"):
+		var size_multiplier := 1.6 if explosion_radius > 0.0 else 1.0
+		game.spawn_combat_effect(global_position, CombatEffect.Type.ROCKET_EXPLOSION, size_multiplier)

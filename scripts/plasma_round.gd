@@ -58,6 +58,7 @@ func _process(delta: float) -> void:
 	travel_direction = offset.normalized()
 	rotation = travel_direction.angle()
 	if offset.length() <= SPEED * delta + 5.0:
+		_spawn_impact()
 		target.take_damage(damage)
 		deactivate()
 		return
@@ -77,7 +78,14 @@ func _draw() -> void:
 
 
 func _draw_projectile_frame(column: int, size: Vector2) -> void:
+	draw_line(Vector2(-14.0, 0.0), Vector2(-3.0, 0.0), Color(0.25, 0.82, 1.0, 0.45), 2.0)
 	var frame := int(visual_time * 12.0) % 2
 	var cell := Vector2(PROJECTILE_ART.get_width() / 4.0, PROJECTILE_ART.get_height() / 2.0)
 	var source := Rect2(Vector2(column * cell.x, frame * cell.y), cell)
 	draw_texture_rect_region(PROJECTILE_ART, Rect2(-size * 0.5, size), source)
+
+
+func _spawn_impact() -> void:
+	var game := get_parent().get_parent()
+	if game != null and game.has_method("spawn_combat_effect"):
+		game.spawn_combat_effect(global_position, CombatEffect.Type.PLASMA_IMPACT)
