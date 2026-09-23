@@ -81,7 +81,13 @@ func _draw_enemy_art(kind: int, width: float, bar_color: Color) -> void:
 	if kind < 6:
 		width *= 1.2
 	var size := Vector2(width, width * source.size.y / source.size.x)
+	# The walking mine (kind 3) faces left in the atlas; the other art faces right.
+	# Mirror only the sprite, so the health bar remains readable.
+	var player_is_left := target_position.x < global_position.x
+	var flip_art := not player_is_left if kind == 3 else player_is_left
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1.0 if flip_art else 1.0, 1.0))
 	draw_texture_rect_region(art, Rect2(-size * 0.5, size), source)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var bar_width := width * 0.75
 	var bar_y := -size.y * 0.5 - 5.0
 	draw_rect(Rect2(-bar_width * 0.5, bar_y, bar_width, 3.0), Color("160d18"))

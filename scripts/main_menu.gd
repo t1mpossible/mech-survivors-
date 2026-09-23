@@ -23,6 +23,39 @@ func _hide_levels() -> void:
 	$Style.visible = true
 
 
+func _show_options() -> void:
+	$Buttons.visible = false
+	$Style.visible = false
+	$OptionsPanel.visible = true
+	var settings := _get_settings()
+	if settings != null:
+		$OptionsPanel/Volume.value = float(settings.get("master_volume")) * 100.0
+		$OptionsPanel/Fullscreen.button_pressed = bool(settings.get("fullscreen"))
+
+
+func _hide_options() -> void:
+	$OptionsPanel.visible = false
+	$Buttons.visible = true
+	$Style.visible = true
+
+
+func _set_volume(value: float) -> void:
+	var settings := _get_settings()
+	if settings != null:
+		settings.call("set_master_volume", value / 100.0)
+	$OptionsPanel/VolumeValue.text = "%d%%" % roundi(value)
+
+
+func _set_fullscreen(enabled: bool) -> void:
+	var settings := _get_settings()
+	if settings != null:
+		settings.call("set_fullscreen", enabled)
+
+
+func _get_settings() -> Node:
+	return get_node_or_null("/root/Settings")
+
+
 func _refresh_levels() -> void:
 	if not has_node("LevelPanel"):
 		return
@@ -38,9 +71,6 @@ func _select_level(planet: int) -> void:
 		GameState.select_planet(planet)
 		get_tree().change_scene_to_file("res://scenes/main.tscn")
 
-
-func _coming_soon() -> void:
-	$Style.text = "ОПЦИИ ПОЯВЯТСЯ ПОЗЖЕ"
 
 func _exit_game() -> void:
 	get_tree().quit()

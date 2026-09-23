@@ -68,10 +68,16 @@ var experience := 0
 var level := 1
 var experience_to_next_level := BASE_EXPERIENCE_TO_LEVEL
 var weapon_level := 1
-var weapon_damage := 18
+var weapon_damage := 18.0
 var weapon_cooldown := AUTOCANNON_COOLDOWN
+var autocannon_branch := ""
 var autocannon_salvo := 1
 var autocannon_evolved := false
+var autocannon_projectile_speed := 1.0
+var autocannon_pierce_limit := 1
+var desert_eagle_shots_left := 0
+var desert_eagle_shot_time_left := 0.0
+var last_cannon_direction := Vector2.RIGHT
 var missile_unlocked := false
 var missile_level := 0
 var missile_damage := 20
@@ -98,6 +104,14 @@ var weapon_visual_time := 0.0
 var upgrade_open := false
 var mech_destroyed := false
 var manual_paused := false
+var victory_open := false
+var completed_planet := 0
+var weapon_damage_totals := {
+	"АВТОПУШКА": 0,
+	"ОХОТНИЧЬИ РАКЕТЫ": 0,
+	"ЛАЗЕР": 0,
+	"СЮРИКЕНЫ": 0,
+}
 var available_upgrades: Array[Dictionary] = []
 var plasma_round_pool: Array[PlasmaRound] = []
 var hunter_missile_pool: Array[HunterMissile] = []
@@ -107,6 +121,7 @@ var combat_effect_pool: Array[CombatEffect] = []
 var combat_popup_pool: Array[Node2D] = []
 var nearest_target: AlienScout
 var target_cache_time_left := 0.0
+var xp_sound_time_left := 0.0
 
 @onready var initial_scout: AlienScout = $Scout
 @onready var camera: Camera2D = $Camera2D
@@ -273,7 +288,7 @@ func acquire_xp_orb() -> XpOrb:
 func _process(delta: float) -> void:
 	$Hud/Fps.text = "FPS %d" % Engine.get_frames_per_second()
 	_update_camera_shake(delta)
-	if manual_paused or upgrade_open or mech_destroyed:
+	if manual_paused or upgrade_open or mech_destroyed or victory_open:
 		_position_camera()
 		return
 
@@ -288,6 +303,7 @@ func _process(delta: float) -> void:
 
 	var active_move_speed := move_speed * (1.5 if speed_boost_time_left > 0.0 else 1.0)
 	weapon_visual_time += delta
+	xp_sound_time_left = maxf(xp_sound_time_left - delta, 0.0)
 	var previous_mech_position := mech_position
 	mech_position += movement * active_move_speed * delta
 	mech_position.x = clampf(mech_position.x, 15.0, MAP_SIZE.x - 15.0)
@@ -351,12 +367,7 @@ func _process(delta: float) -> void:
 		mech_health = minf(mech_max_health, mech_health + repair_per_second * delta)
 		_update_health_label()
 
-	cannon_time_left -= delta
-	if cannon_time_left <= 0.0:
-		var target := _get_nearest_enemy()
-		if target != null:
-			_fire_autocannon(target)
-			cannon_time_left = weapon_cooldown / _get_fire_rate_multiplier()
+	_update_autocannon(delta)
 
 	if missile_unlocked:
 		missile_time_left -= delta
@@ -374,7 +385,7 @@ func _process(delta: float) -> void:
 				_fire_laser_burst(laser_target)
 				laser_tick = 2.0
 			else:
-				laser_target.take_damage(laser_damage)
+				_deal_weapon_damage(laser_target, laser_damage, "ЛАЗЕР")
 				laser_tick = laser_cooldown / _get_fire_rate_multiplier()
 
 	if shuriken_unlocked:
@@ -387,7 +398,7 @@ func _process(delta: float) -> void:
 				for enemy_node in get_tree().get_nodes_in_group("enemies"):
 					var enemy := enemy_node as AlienScout
 					if enemy != null and enemy.global_position.distance_to(shuriken_position) <= shuriken_hit_radius + enemy.hit_radius:
-						enemy.take_damage(shuriken_damage)
+						_deal_weapon_damage(enemy, shuriken_damage, "СЮРИКЕНЫ")
 			shuriken_hit_time_left = 0.25 / _get_fire_rate_multiplier()
 	queue_redraw()
 
@@ -429,11 +440,50 @@ func _refresh_nearest_target() -> void:
 	target_cache_time_left = TARGET_REFRESH_INTERVAL
 
 
+func _update_autocannon(delta: float) -> void:
+	if autocannon_branch == "heavy" and weapon_level == 7:
+		if desert_eagle_shots_left > 0:
+			desert_eagle_shot_time_left -= delta
+			if desert_eagle_shot_time_left <= 0.0:
+				_fire_autocannon(_get_nearest_enemy())
+				desert_eagle_shots_left -= 1
+				desert_eagle_shot_time_left += 0.2
+				if desert_eagle_shots_left == 0:
+					cannon_time_left = 3.0
+		else:
+			cannon_time_left -= delta
+			if cannon_time_left <= 0.0 and _get_nearest_enemy() != null:
+				_fire_autocannon(_get_nearest_enemy())
+				desert_eagle_shots_left = 6
+				desert_eagle_shot_time_left = 0.2
+		return
+	cannon_time_left -= delta
+	if cannon_time_left <= 0.0:
+		var target := _get_nearest_enemy()
+		if target != null:
+			_fire_autocannon(target)
+			cannon_time_left = weapon_cooldown / _get_fire_rate_multiplier()
+
+
 func _fire_autocannon(target: AlienScout) -> void:
-	for shot_index in autocannon_salvo:
+	$AudioFeedback.play_sound("cannon")
+	var aim := last_cannon_direction
+	if is_instance_valid(target):
+		aim = (target.global_position - mech_position).normalized()
+	if aim == Vector2.ZERO:
+		aim = Vector2.RIGHT
+	last_cannon_direction = aim
+	var spread_degrees := 12.0 if autocannon_salvo == 3 else 9.0
+	for shot_index in range(autocannon_salvo):
 		var round := acquire_plasma_round()
 		if round != null:
-			round.activate(mech_position + Vector2(11, -2 + (shot_index - 1) * 4), target, weapon_damage)
+			var shot_offset := float(shot_index) - float(autocannon_salvo - 1) * 0.5
+			var direction := aim.rotated(deg_to_rad(spread_degrees * shot_offset * (2.0 if autocannon_salvo == 2 else 1.0)))
+			var start_position := mech_position + aim * 13.0 + aim.orthogonal() * shot_offset * 4.0
+			var spread_direction := direction if autocannon_salvo > 1 or not is_instance_valid(target) else Vector2.ZERO
+			var heavy_round := autocannon_branch == "heavy"
+			var shot_damage := weapon_damage * (1.3 if heavy_round and weapon_level == 7 else 1.0)
+			round.activate(start_position, target, roundi(shot_damage), spread_direction, autocannon_projectile_speed, autocannon_evolved, heavy_round, autocannon_pierce_limit)
 
 
 func _fire_hunter_missile(target: AlienScout) -> void:
@@ -443,16 +493,26 @@ func _fire_hunter_missile(target: AlienScout) -> void:
 	var missile_speed := 55.0 if missile_evolved else HunterMissile.BASE_SPEED
 	var explosion_radius := 46.0 if missile_evolved else 0.0
 	missile.activate(mech_position + Vector2(-4, -9), target, missile_damage, missile_speed, explosion_radius)
+	$AudioFeedback.play_sound("missile")
 
 
 func _fire_laser_burst(target: AlienScout) -> void:
+	$AudioFeedback.play_sound("laser")
 	var beam_direction := (target.global_position - mech_position).normalized()
 	laser_beam_end = mech_position + beam_direction * 300.0
 	laser_beam_time_left = 0.14
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as AlienScout
 		if enemy != null and Geometry2D.get_closest_point_to_segment(enemy.global_position, mech_position, laser_beam_end).distance_to(enemy.global_position) <= 12.0:
-			enemy.take_damage(90)
+			_deal_weapon_damage(enemy, 90, "ЛАЗЕР")
+
+
+func _deal_weapon_damage(enemy: AlienScout, amount: int, weapon_name: String) -> void:
+	if not is_instance_valid(enemy) or enemy.health <= 0:
+		return
+	var actual_damage := mini(amount, enemy.health)
+	weapon_damage_totals[weapon_name] = int(weapon_damage_totals.get(weapon_name, 0)) + actual_damage
+	enemy.take_damage(amount)
 
 
 func _get_shuriken_angles() -> Array[float]:
@@ -474,16 +534,7 @@ func _on_scout_died(dead_scout: AlienScout) -> void:
 	if dead_scout is AlienBoss:
 		boss = null
 		if wave_number == 6:
-			var completed_planet := planet_number
-			planet_number = mini(planet_number + 1, PLANET_COUNT)
-			if planet_number > completed_planet:
-				GameState.unlock_planet(planet_number)
-			wave_number = 1
-			wave_elapsed = 0.0
-			last_wave_stage = 0
-			_prepare_wave_pickups()
-			_update_wave_hud()
-			$Hud/EnemyStatus.text = "ЗОНА %d ПРОЙДЕНА" % (planet_number - 1)
+			_show_victory(planet_number)
 			return
 	$Hud/EnemyStatus.text = "ОРБ ОПЫТА СБРОШЕН"
 
@@ -623,6 +674,7 @@ func _collect_health_pack(heal_fraction: float) -> void:
 	$Hud/EnemyStatus.text = "АПТЕЧКА: +25% HP"
 	spawn_combat_effect(mech_position, CombatEffect.Type.REPAIR)
 	spawn_combat_popup(mech_position, "+25% HP", Color("78f7ad"))
+	$AudioFeedback.play_sound("heal")
 	_update_health_label()
 
 
@@ -658,6 +710,7 @@ func _collect_powerup(powerup_type: int) -> void:
 		$Hud/EnemyStatus.text = "ПЕРЕГРУЗКА: +45% СКОРОСТРЕЛЬНОСТИ"
 		spawn_combat_effect(mech_position, CombatEffect.Type.FIRE_RATE_BOOST)
 		spawn_combat_popup(mech_position, "ТЕМП +45%", Color("ffb45a"))
+	$AudioFeedback.play_sound("boost")
 
 
 func _get_fire_rate_multiplier() -> float:
@@ -873,6 +926,9 @@ func _update_wave_hud() -> void:
 
 func _collect_experience(amount: int) -> void:
 	experience += amount
+	if xp_sound_time_left <= 0.0:
+		$AudioFeedback.play_sound("xp")
+		xp_sound_time_left = 0.11
 	if experience >= experience_to_next_level:
 		experience -= experience_to_next_level
 		level += 1
@@ -889,9 +945,14 @@ func _update_experience_label() -> void:
 
 
 func _open_upgrade_choice() -> void:
+	$AudioFeedback.play_sound("level")
 	upgrade_open = true
 	get_tree().paused = true
-	available_upgrades = [_get_weapon_upgrade(), _get_weapon_upgrade(), _get_character_upgrade(), _get_character_upgrade()]
+	if weapon_level == 1 and autocannon_branch.is_empty():
+		available_upgrades = [_get_autocannon_upgrade(), _get_heavy_autocannon_upgrade(), _get_character_upgrade(), _get_character_upgrade()]
+	else:
+		var first_weapon := _get_autocannon_upgrade() if weapon_level < 7 else _get_weapon_upgrade()
+		available_upgrades = [first_weapon, _get_weapon_upgrade(false), _get_character_upgrade(), _get_character_upgrade()]
 	$Hud/UpgradePanel.visible = true
 	$Hud/UpgradePanel/OptionA.text = available_upgrades[0].title
 	$Hud/UpgradePanel/OptionB.text = available_upgrades[1].title
@@ -899,13 +960,10 @@ func _open_upgrade_choice() -> void:
 	$Hud/UpgradePanel/OptionD.text = available_upgrades[3].title
 
 
-func _get_weapon_upgrade() -> Dictionary:
+func _get_weapon_upgrade(include_autocannon: bool = true) -> Dictionary:
 	var choices: Array[Dictionary] = []
-	if weapon_level == 6 and not autocannon_evolved:
-		choices.append({"kind": "evolve_autocannon", "title": "УР. 7: ШКВАЛ — ТРОЙНОЙ ЗАЛП"})
-	elif weapon_level < 6:
-		choices.append({"kind": "weapon_damage", "title": "АВТОПУШКА: +5 урона"})
-		choices.append({"kind": "weapon_rate", "title": "АВТОПУШКА: +20% к темпу"})
+	if include_autocannon and weapon_level < 7:
+		choices.append(_get_autocannon_upgrade())
 	if not missile_unlocked and level >= 3:
 		choices.append({"kind": "unlock_missile", "title": "НОВОЕ ОРУЖИЕ: ОХОТНИЧЬИ РАКЕТЫ"})
 	elif missile_unlocked and missile_level == 6 and not missile_evolved:
@@ -928,8 +986,44 @@ func _get_weapon_upgrade() -> Dictionary:
 		choices.append({"kind": "shuriken_damage", "title": "СЮРИКЕНЫ: +12 урона"})
 		choices.append({"kind": "shuriken_radius", "title": "СЮРИКЕНЫ: +15 к радиусу"})
 	if choices.is_empty():
-		return _get_character_upgrade()
+		return _get_autocannon_upgrade() if weapon_level < 7 else _get_character_upgrade()
 	return choices.pick_random()
+
+
+func _get_autocannon_upgrade() -> Dictionary:
+	if autocannon_branch == "heavy":
+		return _get_heavy_autocannon_upgrade()
+	match weapon_level:
+		1:
+			return {"kind": "autocannon_step", "title": "ПУШКА УР. 2: 2 СНАРЯДА, -35% УРОН"}
+		2:
+			return {"kind": "autocannon_step", "title": "ПУШКА УР. 3: +20% УРОН И ТЕМП"}
+		3:
+			return {"kind": "autocannon_step", "title": "ПУШКА УР. 4: 3 СНАРЯДА ВЕЕРОМ"}
+		4:
+			return {"kind": "autocannon_step", "title": "ПУШКА УР. 5: +30% ТЕМП, -15% УРОН"}
+		5:
+			return {"kind": "autocannon_step", "title": "ПУШКА УР. 6: +20% УРОН, +30% СКОР."}
+		6:
+			return {"kind": "autocannon_step", "title": "УР. 7: ПЛАЗМОТРОН ПРАЙМ"}
+	return _get_character_upgrade()
+
+
+func _get_heavy_autocannon_upgrade() -> Dictionary:
+	match weapon_level:
+		1:
+			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 2: +50% УРОН, -35% ТЕМП"}
+		2:
+			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 3: ПРОБИТИЕ 2, +20% СКОР."}
+		3:
+			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 4: +35% УРОН"}
+		4:
+			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 5: ПРОБИТИЕ 3, +20% ТЕМП"}
+		5:
+			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 6: +15% УРОН И ТЕМП"}
+		6:
+			return {"kind": "heavy_autocannon_step", "title": "УР. 7: DESERT EAGLE — ОЧЕРЕДЬ ИЗ 7"}
+	return _get_character_upgrade()
 
 
 func _get_character_upgrade() -> Dictionary:
@@ -949,27 +1043,60 @@ func _get_other_weapon_upgrade() -> Dictionary:
 		return {"kind": "unlock_missile", "title": "НОВОЕ ОРУЖИЕ: ОХОТНИЧЬИ РАКЕТЫ"}
 	if missile_unlocked and missile_level < 6:
 		return {"kind": "missile_damage", "title": "РАКЕТЫ: +10 урона"}
-	if weapon_level < 6:
-		return {"kind": "weapon_damage", "title": "АВТОПУШКА: +5 урона"}
+	if weapon_level < 7:
+		return _get_autocannon_upgrade()
 	return _get_character_upgrade()
 
 
 func _choose_upgrade(index: int) -> void:
 	var choice := available_upgrades[index]
 	match choice.kind:
-		"weapon_damage":
-			weapon_level += 1
-			weapon_damage += 5
-			$Hud/EnemyStatus.text = "АВТОПУШКА УР. %d: %d УРОНА" % [weapon_level, weapon_damage]
-		"weapon_rate":
-			weapon_level += 1
-			weapon_cooldown *= 0.8
-			$Hud/EnemyStatus.text = "АВТОПУШКА УР. %d: ТЕМП +20%%" % weapon_level
-		"evolve_autocannon":
-			weapon_level = 7
-			autocannon_evolved = true
-			autocannon_salvo = 3
-			$Hud/EnemyStatus.text = "ЭВОЛЮЦИЯ: ШКВАЛ — ТРОЙНОЙ ЗАЛП"
+		"autocannon_step":
+			if weapon_level < 7:
+				weapon_level += 1
+				match weapon_level:
+					2:
+						autocannon_branch = "fan"
+						autocannon_salvo = 2
+						weapon_damage *= 0.65
+					3:
+						weapon_damage *= 1.2
+						weapon_cooldown /= 1.2
+					4:
+						autocannon_salvo = 3
+					5:
+						weapon_cooldown /= 1.3
+						weapon_damage *= 0.85
+					6:
+						weapon_damage *= 1.2
+						autocannon_projectile_speed *= 1.3
+					7:
+						weapon_damage *= 1.15
+						weapon_cooldown /= 1.35
+						autocannon_evolved = true
+				$Hud/EnemyStatus.text = "ПЛАЗМОТРОН ПРАЙМ" if autocannon_evolved else "АВТОПУШКА УР. %d" % weapon_level
+		"heavy_autocannon_step":
+			if weapon_level < 7:
+				weapon_level += 1
+				match weapon_level:
+					2:
+						autocannon_branch = "heavy"
+						weapon_damage *= 1.5
+						weapon_cooldown /= 0.65
+					3:
+						autocannon_pierce_limit = 2
+						autocannon_projectile_speed *= 1.2
+					4:
+						weapon_damage *= 1.35
+					5:
+						autocannon_pierce_limit = 3
+						weapon_cooldown /= 1.2
+					6:
+						weapon_damage *= 1.15
+						weapon_cooldown /= 1.15
+					7:
+						cannon_time_left = 0.0
+				$Hud/EnemyStatus.text = "DESERT EAGLE" if weapon_level == 7 else "ТЯЖЁЛАЯ ПУШКА УР. %d" % weapon_level
 		"unlock_missile":
 			missile_unlocked = true
 			missile_level = 1
@@ -1040,6 +1167,7 @@ func _take_damage(amount: float) -> void:
 	mech_hit_flash_time = 0.12
 	if amount >= 2.0:
 		_start_camera_shake(0.75)
+		$AudioFeedback.play_sound("hurt")
 	var remaining_damage := amount * (1.0 - armor_reduction)
 	if shield_health > 0.0:
 		var absorbed := minf(shield_health, remaining_damage)
@@ -1078,19 +1206,111 @@ func _restart_game() -> void:
 
 
 func _return_to_menu() -> void:
+	_hide_pause_options()
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 
+func _show_victory(finished_planet: int) -> void:
+	victory_open = true
+	completed_planet = finished_planet
+	var next_planet := mini(finished_planet + 1, PLANET_COUNT)
+	if next_planet > finished_planet:
+		GameState.unlock_planet(next_planet)
+	var best_weapon := "АВТОПУШКА"
+	var best_damage := -1
+	for weapon_name in weapon_damage_totals:
+		var total := int(weapon_damage_totals[weapon_name])
+		if total > best_damage:
+			best_weapon = weapon_name
+			best_damage = total
+	$Hud/BattleSummary/BestWeapon.text = "ЛИДЕР: %s — %d УРОНА" % [best_weapon, best_damage]
+	$Hud/BattleSummary/Autocannon.text = "АВТОПУШКА        %d" % int(weapon_damage_totals["АВТОПУШКА"])
+	$Hud/BattleSummary/Missiles.text = "ОХОТНИЧЬИ РАКЕТЫ  %d" % int(weapon_damage_totals["ОХОТНИЧЬИ РАКЕТЫ"])
+	$Hud/BattleSummary/Laser.text = "ЛАЗЕР             %d" % int(weapon_damage_totals["ЛАЗЕР"])
+	$Hud/BattleSummary/Shurikens.text = "СЮРИКЕНЫ          %d" % int(weapon_damage_totals["СЮРИКЕНЫ"])
+	$Hud/BattleSummary/NextZone.text = "ПЕРЕЙТИ В ЗОНУ %d" % next_planet if finished_planet < PLANET_COUNT else "В ГЛАВНОЕ МЕНЮ"
+	$Hud/Victory.visible = true
+	$Hud/EnemyStatus.text = "ЗОНА %d ПРОЙДЕНА" % finished_planet
+	get_tree().paused = true
+
+
+func _continue_after_victory() -> void:
+	get_tree().paused = false
+	if completed_planet < PLANET_COUNT:
+		GameState.select_planet(completed_planet + 1)
+		get_tree().change_scene_to_file("res://scenes/main.tscn")
+	else:
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+
+func _show_battle_summary() -> void:
+	$Hud/Victory.visible = false
+	$Hud/BattleSummary.visible = true
+
+
+func _hide_battle_summary() -> void:
+	$Hud/BattleSummary.visible = false
+	$Hud/Victory.visible = true
+
+
 func _toggle_pause() -> void:
 	manual_paused = not manual_paused
+	if manual_paused:
+		_hide_pause_options()
 	$Hud/PausePanel.visible = manual_paused
 	get_tree().paused = manual_paused
 
 
 func _resume_game() -> void:
 	if manual_paused:
+		_hide_pause_options()
 		_toggle_pause()
+
+
+func _show_pause_options() -> void:
+	var pause_panel := $Hud/PausePanel
+	pause_panel.get_node("Title").visible = false
+	pause_panel.get_node("Hint").visible = false
+	pause_panel.get_node("Resume").visible = false
+	pause_panel.get_node("Options").visible = false
+	pause_panel.get_node("Menu").visible = false
+	var options := pause_panel.get_node("OptionsPanel")
+	options.visible = true
+	var settings := _get_settings()
+	if settings != null:
+		var volume := float(settings.get("master_volume"))
+		options.get_node("Volume").value = volume * 100.0
+		options.get_node("VolumeValue").text = "%d%%" % roundi(volume * 100.0)
+		options.get_node("Fullscreen").button_pressed = bool(settings.get("fullscreen"))
+
+
+func _hide_pause_options() -> void:
+	if not has_node("Hud/PausePanel/OptionsPanel"):
+		return
+	var pause_panel := $Hud/PausePanel
+	pause_panel.get_node("OptionsPanel").visible = false
+	for node_name in ["Title", "Hint", "Resume", "Options", "Menu"]:
+		pause_panel.get_node(node_name).visible = true
+
+
+func _set_pause_volume(value: float) -> void:
+	var settings := _get_settings()
+	if settings != null:
+		settings.call("set_master_volume", value / 100.0)
+	$Hud/PausePanel/OptionsPanel/VolumeValue.text = "%d%%" % roundi(value)
+
+
+func _set_pause_fullscreen(enabled: bool) -> void:
+	var settings := _get_settings()
+	if settings != null:
+		settings.call("set_fullscreen", enabled)
+
+
+func _get_settings() -> Node:
+	# Looking up the optional autoload at runtime keeps the game compilable even
+	# while Godot is refreshing project settings after a Git update.
+	return get_node_or_null("/root/Settings")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1107,7 +1327,7 @@ func _update_health_label() -> void:
 
 
 func _update_upgrade_list() -> void:
-	var weapon_line := "ПУШКА %d" % weapon_level
+	var weapon_line := "ТЯЖ. ПУШКА %d" % weapon_level if autocannon_branch == "heavy" else "ПУШКА %d" % weapon_level
 	if missile_unlocked:
 		weapon_line += " | РАКЕТЫ %d" % missile_level
 	if laser_unlocked:

@@ -258,9 +258,74 @@ theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "Назад"
 
+[node name="OptionsPanel" type="Panel" parent="."]
+visible = false
+offset_left = 72.0
+offset_top = 47.0
+offset_right = 248.0
+offset_bottom = 133.0
+theme_override_styles/panel = SubResource("MenuCard")
+
+[node name="Title" type="Label" parent="OptionsPanel"]
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 164.0
+offset_bottom = 22.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.65, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "ОПЦИИ"
+
+[node name="VolumeLabel" type="Label" parent="OptionsPanel"]
+offset_left = 16.0
+offset_top = 29.0
+offset_right = 100.0
+offset_bottom = 39.0
+theme_override_colors/font_color = Color(0.72, 0.86, 0.93, 1)
+theme_override_font_sizes/font_size = 6
+text = "ГРОМКОСТЬ"
+
+[node name="Volume" type="HSlider" parent="OptionsPanel"]
+offset_left = 16.0
+offset_top = 41.0
+offset_right = 126.0
+offset_bottom = 51.0
+max_value = 100.0
+step = 5.0
+value = 65.0
+
+[node name="VolumeValue" type="Label" parent="OptionsPanel"]
+offset_left = 132.0
+offset_top = 41.0
+offset_right = 158.0
+offset_bottom = 51.0
+theme_override_colors/font_color = Color(1, 0.75, 0.34, 1)
+theme_override_font_sizes/font_size = 6
+text = "65%"
+
+[node name="Fullscreen" type="CheckButton" parent="OptionsPanel"]
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 158.0
+offset_bottom = 69.0
+theme_override_font_sizes/font_size = 6
+text = "ПОЛНЫЙ ЭКРАН"
+button_pressed = true
+
+[node name="Back" type="Button" parent="OptionsPanel"]
+offset_left = 48.0
+offset_top = 72.0
+offset_right = 128.0
+offset_bottom = 83.0
+theme_override_font_sizes/font_size = 7
+theme_override_styles/normal = SubResource("MenuButtonNormal")
+theme_override_styles/hover = SubResource("MenuButtonHover")
+theme_override_styles/pressed = SubResource("MenuButtonPressed")
+text = "Назад"
+
 [connection signal="pressed" from="Buttons/NewGame" to="." method="_new_game"]
 [connection signal="pressed" from="Buttons/Levels" to="." method="_show_levels"]
-[connection signal="pressed" from="Buttons/Options" to="." method="_coming_soon"]
+[connection signal="pressed" from="Buttons/Options" to="." method="_show_options"]
 [connection signal="pressed" from="Buttons/Exit" to="." method="_exit_game"]
 [connection signal="pressed" from="LevelPanel/Zone1" to="." method="_select_level" binds= [1]]
 [connection signal="pressed" from="LevelPanel/Zone2" to="." method="_select_level" binds= [2]]
@@ -268,3 +333,6 @@ text = "Назад"
 [connection signal="pressed" from="LevelPanel/Zone4" to="." method="_select_level" binds= [4]]
 [connection signal="pressed" from="LevelPanel/Zone5" to="." method="_select_level" binds= [5]]
 [connection signal="pressed" from="LevelPanel/Back" to="." method="_hide_levels"]
+[connection signal="value_changed" from="OptionsPanel/Volume" to="." method="_set_volume"]
+[connection signal="toggled" from="OptionsPanel/Fullscreen" to="." method="_set_fullscreen"]
+[connection signal="pressed" from="OptionsPanel/Back" to="." method="_hide_options"]

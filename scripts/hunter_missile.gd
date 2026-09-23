@@ -78,13 +78,20 @@ func _begin_orphan_flight() -> void:
 
 func _explode() -> void:
 	_spawn_explosion()
+	var game := get_parent().get_parent()
 	if explosion_radius <= 0.0:
-		target.take_damage(damage)
+		if game != null and game.has_method("_deal_weapon_damage"):
+			game._deal_weapon_damage(target, damage, "ОХОТНИЧЬИ РАКЕТЫ")
+		else:
+			target.take_damage(damage)
 		return
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as AlienScout
 		if enemy != null and enemy.global_position.distance_to(global_position) <= explosion_radius:
-			enemy.take_damage(damage)
+			if game != null and game.has_method("_deal_weapon_damage"):
+				game._deal_weapon_damage(enemy, damage, "ОХОТНИЧЬИ РАКЕТЫ")
+			else:
+				enemy.take_damage(damage)
 
 
 func _draw() -> void:
