@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/autocannon.gd" id="1_autocannon"]
+
+[node name="Autocannon" type="Node"]
+script = ExtResource("1_autocannon")

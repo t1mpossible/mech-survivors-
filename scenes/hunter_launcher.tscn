@@ -1,0 +1,177 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/hunter_launcher.gd" id="1_launcher"]
+[ext_resource type="Script" path="res://scripts/hunter_level_data.gd" id="2_level"]
+
+[sub_resource type="Resource" id="Swarm1"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 22
+interval = 3.0
+speed = 95.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Одна обычная ракета"
+
+[sub_resource type="Resource" id="Swarm2"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 2
+damage = 15
+interval = 3.0
+speed = 95.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Две мелкие жёлтые ракеты, расходятся дугами"
+
+[sub_resource type="Resource" id="Swarm3"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 3
+damage = 15
+interval = 3.0
+speed = 95.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Три разные дуги"
+
+[sub_resource type="Resource" id="Swarm4"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 3
+damage = 15
+interval = 2.2
+speed = 95.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Более частые залпы"
+
+[sub_resource type="Resource" id="Swarm5"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 4
+damage = 15
+interval = 2.2
+speed = 95.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Четыре разные дуги"
+
+[sub_resource type="Resource" id="Swarm6"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 4
+damage = 18
+interval = 2.2
+speed = 119.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Более быстрые ракеты"
+
+[sub_resource type="Resource" id="Swarm7"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 6
+damage = 15
+interval = 1.8
+speed = 122.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Жёлтая буря: шесть ракет по разным дугам"
+
+[sub_resource type="Resource" id="Siege1"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 22
+interval = 3.0
+speed = 95.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Одна обычная ракета"
+
+[sub_resource type="Resource" id="Siege2"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 35
+interval = 3.5
+speed = 95.0
+radius = 0.0
+blasts = 1
+blast_pause = 0.0
+description = "Более крупная тяжёлая ракета"
+
+[sub_resource type="Resource" id="Siege3"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 35
+interval = 3.5
+speed = 95.0
+radius = 40.0
+blasts = 1
+blast_pause = 0.0
+description = "Взрыв поражает врагов рядом"
+
+[sub_resource type="Resource" id="Siege4"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 45
+interval = 3.5
+speed = 95.0
+radius = 40.0
+blasts = 1
+blast_pause = 0.0
+description = "Повышенный урон"
+
+[sub_resource type="Resource" id="Siege5"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 45
+interval = 3.2
+speed = 95.0
+radius = 55.0
+blasts = 1
+blast_pause = 0.0
+description = "Взрыв шире, выстрелы чаще"
+
+[sub_resource type="Resource" id="Siege6"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 55
+interval = 3.2
+speed = 95.0
+radius = 55.0
+blasts = 1
+blast_pause = 0.0
+description = "Повышенный урон"
+
+[sub_resource type="Resource" id="Siege7"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+count = 1
+damage = 55
+interval = 3.2
+speed = 95.0
+radius = 55.0
+blasts = 3
+blast_pause = 0.25
+description = "Тройной удар: три взрыва в точке попадания"
+
+[node name="HunterLauncher" type="Node"]
+script = ExtResource("1_launcher")
+swarm_levels = Array[ExtResource("2_level")]([SubResource("Swarm1"), SubResource("Swarm2"), SubResource("Swarm3"), SubResource("Swarm4"), SubResource("Swarm5"), SubResource("Swarm6"), SubResource("Swarm7")])
+siege_levels = Array[ExtResource("2_level")]([SubResource("Siege1"), SubResource("Siege2"), SubResource("Siege3"), SubResource("Siege4"), SubResource("Siege5"), SubResource("Siege6"), SubResource("Siege7")])

@@ -16,7 +16,6 @@ const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
 const COMBAT_EFFECT := preload("res://scenes/combat_effect.tscn")
 const COMBAT_POPUP := preload("res://scenes/combat_popup.tscn")
 const HERO_WEAPON_EFFECTS := preload("res://assets/hero_weapon_effects_v1.png")
-const AUTOCANNON_COOLDOWN := 1.5
 const PLANET_COUNT := 5
 const WAVES_PER_PLANET := 6
 const WAVE_DURATION := 60.0
@@ -33,7 +32,6 @@ const TARGET_REFRESH_INTERVAL := 0.15
 var mech_position := MAP_SIZE / 2.0
 var tread_travel := 0.0
 var touch_direction := {"up": false, "down": false, "left": false, "right": false}
-var cannon_time_left := 0.0
 var small_spawn_time_left := 0.2
 var medium_spawn_time_left := 0.6
 var bomber_spawn_time_left := 1.0
@@ -67,23 +65,6 @@ var shield_health := 0.0
 var experience := 0
 var level := 1
 var experience_to_next_level := BASE_EXPERIENCE_TO_LEVEL
-var weapon_level := 1
-var weapon_damage := 18.0
-var weapon_cooldown := AUTOCANNON_COOLDOWN
-var autocannon_branch := ""
-var autocannon_salvo := 1
-var autocannon_evolved := false
-var autocannon_projectile_speed := 1.0
-var autocannon_pierce_limit := 1
-var desert_eagle_shots_left := 0
-var desert_eagle_shot_time_left := 0.0
-var last_cannon_direction := Vector2.RIGHT
-var missile_unlocked := false
-var missile_level := 0
-var missile_damage := 20
-var missile_cooldown := 3.0
-var missile_time_left := 1.5
-var missile_evolved := false
 var laser_unlocked := false
 var laser_tick := 0.0
 var laser_target: AlienScout
@@ -126,6 +107,8 @@ var xp_sound_time_left := 0.0
 @onready var initial_scout: AlienScout = $Scout
 @onready var camera: Camera2D = $Camera2D
 @onready var mech_sprite: Sprite2D = $MechSprite
+@onready var autocannon: Autocannon = $Autocannon
+@onready var hunter_launcher: HunterLauncher = $HunterLauncher
 
 
 func _ready() -> void:
@@ -367,15 +350,9 @@ func _process(delta: float) -> void:
 		mech_health = minf(mech_max_health, mech_health + repair_per_second * delta)
 		_update_health_label()
 
-	_update_autocannon(delta)
+	autocannon.tick(delta, mech_position, _get_nearest_enemy(), _get_fire_rate_multiplier())
 
-	if missile_unlocked:
-		missile_time_left -= delta
-		if missile_time_left <= 0.0:
-			var missile_target := _get_nearest_enemy()
-			if missile_target != null:
-				_fire_hunter_missile(missile_target)
-				missile_time_left = missile_cooldown / _get_fire_rate_multiplier()
+	hunter_launcher.tick(delta, mech_position, _get_nearest_enemy(), _get_fire_rate_multiplier())
 
 	if laser_unlocked:
 		laser_tick -= delta
@@ -440,59 +417,24 @@ func _refresh_nearest_target() -> void:
 	target_cache_time_left = TARGET_REFRESH_INTERVAL
 
 
-func _update_autocannon(delta: float) -> void:
-	if autocannon_branch == "heavy" and weapon_level == 7:
-		if desert_eagle_shots_left > 0:
-			desert_eagle_shot_time_left -= delta
-			if desert_eagle_shot_time_left <= 0.0:
-				_fire_autocannon(_get_nearest_enemy())
-				desert_eagle_shots_left -= 1
-				desert_eagle_shot_time_left += 0.2
-				if desert_eagle_shots_left == 0:
-					cannon_time_left = 3.0
-		else:
-			cannon_time_left -= delta
-			if cannon_time_left <= 0.0 and _get_nearest_enemy() != null:
-				_fire_autocannon(_get_nearest_enemy())
-				desert_eagle_shots_left = 6
-				desert_eagle_shot_time_left = 0.2
-		return
-	cannon_time_left -= delta
-	if cannon_time_left <= 0.0:
-		var target := _get_nearest_enemy()
-		if target != null:
-			_fire_autocannon(target)
-			cannon_time_left = weapon_cooldown / _get_fire_rate_multiplier()
-
-
-func _fire_autocannon(target: AlienScout) -> void:
+func _on_autocannon_fired() -> void:
 	$AudioFeedback.play_sound("cannon")
-	var aim := last_cannon_direction
-	if is_instance_valid(target):
-		aim = (target.global_position - mech_position).normalized()
-	if aim == Vector2.ZERO:
-		aim = Vector2.RIGHT
-	last_cannon_direction = aim
-	var spread_degrees := 12.0 if autocannon_salvo == 3 else 9.0
-	for shot_index in range(autocannon_salvo):
-		var round := acquire_plasma_round()
-		if round != null:
-			var shot_offset := float(shot_index) - float(autocannon_salvo - 1) * 0.5
-			var direction := aim.rotated(deg_to_rad(spread_degrees * shot_offset * (2.0 if autocannon_salvo == 2 else 1.0)))
-			var start_position := mech_position + aim * 13.0 + aim.orthogonal() * shot_offset * 4.0
-			var spread_direction := direction if autocannon_salvo > 1 or not is_instance_valid(target) else Vector2.ZERO
-			var heavy_round := autocannon_branch == "heavy"
-			var shot_damage := weapon_damage * (1.3 if heavy_round and weapon_level == 7 else 1.0)
-			round.activate(start_position, target, roundi(shot_damage), spread_direction, autocannon_projectile_speed, autocannon_evolved, heavy_round, autocannon_pierce_limit)
 
 
-func _fire_hunter_missile(target: AlienScout) -> void:
+func _on_autocannon_projectile_requested(start_position: Vector2, target: AlienScout, damage: int, direction: Vector2, speed_multiplier: float, prime: bool, heavy: bool, pierce_limit: int) -> void:
+	var round := acquire_plasma_round()
+	if round != null:
+		round.activate(start_position, target, damage, direction, speed_multiplier, prime, heavy, pierce_limit)
+
+
+func _on_hunter_missile_requested(start_position: Vector2, target: AlienScout, damage: int, speed: float, explosion_radius: float, blast_count: int, blast_pause: float, arc_offset: float, style: String) -> void:
 	var missile := acquire_hunter_missile()
 	if missile == null:
 		return
-	var missile_speed := 55.0 if missile_evolved else HunterMissile.BASE_SPEED
-	var explosion_radius := 46.0 if missile_evolved else 0.0
-	missile.activate(mech_position + Vector2(-4, -9), target, missile_damage, missile_speed, explosion_radius)
+	missile.activate(start_position, target, damage, speed, explosion_radius, blast_count, blast_pause, arc_offset, style)
+
+
+func _on_hunter_launcher_fired() -> void:
 	$AudioFeedback.play_sound("missile")
 
 
@@ -948,10 +890,16 @@ func _open_upgrade_choice() -> void:
 	$AudioFeedback.play_sound("level")
 	upgrade_open = true
 	get_tree().paused = true
-	if weapon_level == 1 and autocannon_branch.is_empty():
+	if autocannon.level == 1 and autocannon.branch.is_empty():
 		available_upgrades = [_get_autocannon_upgrade(), _get_heavy_autocannon_upgrade(), _get_character_upgrade(), _get_character_upgrade()]
+	elif hunter_launcher.unlocked and hunter_launcher.level == 1 and hunter_launcher.branch.is_empty():
+		available_upgrades = [
+			{"kind": "missile_branch_swarm", "title": hunter_launcher.next_upgrade_title("swarm")},
+			{"kind": "missile_branch_siege", "title": hunter_launcher.next_upgrade_title("siege")},
+			_get_character_upgrade(), _get_character_upgrade()
+		]
 	else:
-		var first_weapon := _get_autocannon_upgrade() if weapon_level < 7 else _get_weapon_upgrade()
+		var first_weapon := _get_autocannon_upgrade() if autocannon.level < 7 else _get_weapon_upgrade()
 		available_upgrades = [first_weapon, _get_weapon_upgrade(false), _get_character_upgrade(), _get_character_upgrade()]
 	$Hud/UpgradePanel.visible = true
 	$Hud/UpgradePanel/OptionA.text = available_upgrades[0].title
@@ -962,15 +910,12 @@ func _open_upgrade_choice() -> void:
 
 func _get_weapon_upgrade(include_autocannon: bool = true) -> Dictionary:
 	var choices: Array[Dictionary] = []
-	if include_autocannon and weapon_level < 7:
+	if include_autocannon and autocannon.level < 7:
 		choices.append(_get_autocannon_upgrade())
-	if not missile_unlocked and level >= 3:
+	if not hunter_launcher.unlocked and level >= 3:
 		choices.append({"kind": "unlock_missile", "title": "НОВОЕ ОРУЖИЕ: ОХОТНИЧЬИ РАКЕТЫ"})
-	elif missile_unlocked and missile_level == 6 and not missile_evolved:
-		choices.append({"kind": "evolve_missile", "title": "УР. 7: ОСАДНЫЙ ЗАРЯД"})
-	elif missile_unlocked and missile_level < 6:
-		choices.append({"kind": "missile_damage", "title": "РАКЕТЫ: +10 урона"})
-		choices.append({"kind": "missile_rate", "title": "РАКЕТЫ: +20% к темпу"})
+	elif hunter_launcher.unlocked and hunter_launcher.level >= 2 and hunter_launcher.level < 7:
+		choices.append({"kind": "missile_step", "title": hunter_launcher.next_upgrade_title()})
 	if not laser_unlocked and level >= 4:
 		choices.append({"kind": "unlock_laser", "title": "НОВОЕ ОРУЖИЕ: ПРОЖИГАЮЩИЙ ЛАЗЕР"})
 	elif laser_unlocked and laser_level == 6 and not laser_evolved:
@@ -986,44 +931,18 @@ func _get_weapon_upgrade(include_autocannon: bool = true) -> Dictionary:
 		choices.append({"kind": "shuriken_damage", "title": "СЮРИКЕНЫ: +12 урона"})
 		choices.append({"kind": "shuriken_radius", "title": "СЮРИКЕНЫ: +15 к радиусу"})
 	if choices.is_empty():
-		return _get_autocannon_upgrade() if weapon_level < 7 else _get_character_upgrade()
+		return _get_autocannon_upgrade() if autocannon.level < 7 else _get_character_upgrade()
 	return choices.pick_random()
 
 
 func _get_autocannon_upgrade() -> Dictionary:
-	if autocannon_branch == "heavy":
+	if autocannon.branch == "heavy":
 		return _get_heavy_autocannon_upgrade()
-	match weapon_level:
-		1:
-			return {"kind": "autocannon_step", "title": "ПУШКА УР. 2: 2 СНАРЯДА, -35% УРОН"}
-		2:
-			return {"kind": "autocannon_step", "title": "ПУШКА УР. 3: +20% УРОН И ТЕМП"}
-		3:
-			return {"kind": "autocannon_step", "title": "ПУШКА УР. 4: 3 СНАРЯДА ВЕЕРОМ"}
-		4:
-			return {"kind": "autocannon_step", "title": "ПУШКА УР. 5: +30% ТЕМП, -15% УРОН"}
-		5:
-			return {"kind": "autocannon_step", "title": "ПУШКА УР. 6: +20% УРОН, +30% СКОР."}
-		6:
-			return {"kind": "autocannon_step", "title": "УР. 7: ПЛАЗМОТРОН ПРАЙМ"}
-	return _get_character_upgrade()
+	return {"kind": "autocannon_step", "title": autocannon.next_upgrade_title("fan")}
 
 
 func _get_heavy_autocannon_upgrade() -> Dictionary:
-	match weapon_level:
-		1:
-			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 2: +50% УРОН, -35% ТЕМП"}
-		2:
-			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 3: ПРОБИТИЕ 2, +20% СКОР."}
-		3:
-			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 4: +35% УРОН"}
-		4:
-			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 5: ПРОБИТИЕ 3, +20% ТЕМП"}
-		5:
-			return {"kind": "heavy_autocannon_step", "title": "ТЯЖ. УР. 6: +15% УРОН И ТЕМП"}
-		6:
-			return {"kind": "heavy_autocannon_step", "title": "УР. 7: DESERT EAGLE — ОЧЕРЕДЬ ИЗ 7"}
-	return _get_character_upgrade()
+	return {"kind": "heavy_autocannon_step", "title": autocannon.next_upgrade_title("heavy")}
 
 
 func _get_character_upgrade() -> Dictionary:
@@ -1038,70 +957,30 @@ func _get_character_upgrade() -> Dictionary:
 	return choices.pick_random()
 
 
-func _get_other_weapon_upgrade() -> Dictionary:
-	if not missile_unlocked and level >= 3:
-		return {"kind": "unlock_missile", "title": "НОВОЕ ОРУЖИЕ: ОХОТНИЧЬИ РАКЕТЫ"}
-	if missile_unlocked and missile_level < 6:
-		return {"kind": "missile_damage", "title": "РАКЕТЫ: +10 урона"}
-	if weapon_level < 7:
-		return _get_autocannon_upgrade()
-	return _get_character_upgrade()
-
-
 func _choose_upgrade(index: int) -> void:
 	var choice := available_upgrades[index]
 	match choice.kind:
 		"autocannon_step":
-			if weapon_level < 7:
-				weapon_level += 1
-				match weapon_level:
-					2:
-						autocannon_branch = "fan"
-						autocannon_salvo = 2
-						weapon_damage *= 0.65
-					3:
-						weapon_damage *= 1.2
-						weapon_cooldown /= 1.2
-					4:
-						autocannon_salvo = 3
-					5:
-						weapon_cooldown /= 1.3
-						weapon_damage *= 0.85
-					6:
-						weapon_damage *= 1.2
-						autocannon_projectile_speed *= 1.3
-					7:
-						weapon_damage *= 1.15
-						weapon_cooldown /= 1.35
-						autocannon_evolved = true
-				$Hud/EnemyStatus.text = "ПЛАЗМОТРОН ПРАЙМ" if autocannon_evolved else "АВТОПУШКА УР. %d" % weapon_level
+			if autocannon.apply_upgrade("fan"):
+				$Hud/EnemyStatus.text = "ПЛАЗМОТРОН ПРАЙМ" if autocannon.prime else "АВТОПУШКА УР. %d" % autocannon.level
 		"heavy_autocannon_step":
-			if weapon_level < 7:
-				weapon_level += 1
-				match weapon_level:
-					2:
-						autocannon_branch = "heavy"
-						weapon_damage *= 1.5
-						weapon_cooldown /= 0.65
-					3:
-						autocannon_pierce_limit = 2
-						autocannon_projectile_speed *= 1.2
-					4:
-						weapon_damage *= 1.35
-					5:
-						autocannon_pierce_limit = 3
-						weapon_cooldown /= 1.2
-					6:
-						weapon_damage *= 1.15
-						weapon_cooldown /= 1.15
-					7:
-						cannon_time_left = 0.0
-				$Hud/EnemyStatus.text = "DESERT EAGLE" if weapon_level == 7 else "ТЯЖЁЛАЯ ПУШКА УР. %d" % weapon_level
+			if autocannon.apply_upgrade("heavy"):
+				$Hud/EnemyStatus.text = "DESERT EAGLE" if autocannon.level == 7 else "ТЯЖЁЛАЯ ПУШКА УР. %d" % autocannon.level
 		"unlock_missile":
-			missile_unlocked = true
-			missile_level = 1
-			missile_time_left = 0.2
+			hunter_launcher.unlock()
 			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ОХОТНИЧЬИ РАКЕТЫ"
+		"missile_branch_swarm":
+			if hunter_launcher.choose_branch("swarm"):
+				$Hud/EnemyStatus.text = "РАКЕТНЫЙ РОЙ УР. 2"
+		"missile_branch_siege":
+			if hunter_launcher.choose_branch("siege"):
+				$Hud/EnemyStatus.text = "ОСАДНАЯ РАКЕТА УР. 2"
+		"missile_step":
+			if hunter_launcher.upgrade():
+				if hunter_launcher.level == 7:
+					$Hud/EnemyStatus.text = "ЖЁЛТАЯ БУРЯ" if hunter_launcher.branch == "swarm" else "ТРОЙНОЙ УДАР"
+				else:
+					$Hud/EnemyStatus.text = "РАКЕТЫ УР. %d" % hunter_launcher.level
 		"unlock_laser":
 			laser_unlocked = true
 			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ПРОЖИГАЮЩИЙ ЛАЗЕР"
@@ -1129,19 +1008,6 @@ func _choose_upgrade(index: int) -> void:
 			shuriken_level = 7
 			shuriken_evolved = true
 			$Hud/EnemyStatus.text = "ЭВОЛЮЦИЯ: КВАДРО-СЮРИКЕНЫ"
-		"missile_damage":
-			missile_level += 1
-			missile_damage += 10
-			$Hud/EnemyStatus.text = "РАКЕТЫ УР. %d: %d УРОНА" % [missile_level, missile_damage]
-		"missile_rate":
-			missile_level += 1
-			missile_cooldown *= 0.8
-			$Hud/EnemyStatus.text = "РАКЕТЫ УР. %d: ТЕМП +20%%" % missile_level
-		"evolve_missile":
-			missile_level = 7
-			missile_evolved = true
-			missile_damage = 70
-			$Hud/EnemyStatus.text = "ЭВОЛЮЦИЯ: ОСАДНЫЙ ЗАРЯД"
 		"max_health":
 			mech_max_health += 20
 			mech_health += 20
@@ -1327,9 +1193,10 @@ func _update_health_label() -> void:
 
 
 func _update_upgrade_list() -> void:
-	var weapon_line := "ТЯЖ. ПУШКА %d" % weapon_level if autocannon_branch == "heavy" else "ПУШКА %d" % weapon_level
-	if missile_unlocked:
-		weapon_line += " | РАКЕТЫ %d" % missile_level
+	var weapon_line := "ТЯЖ. ПУШКА %d" % autocannon.level if autocannon.branch == "heavy" else "ПУШКА %d" % autocannon.level
+	if hunter_launcher.unlocked:
+		var launcher_name := "РОЙ" if hunter_launcher.branch == "swarm" else "ОСАДА" if hunter_launcher.branch == "siege" else "РАКЕТЫ"
+		weapon_line += " | %s %d" % [launcher_name, hunter_launcher.level]
 	if laser_unlocked:
 		weapon_line += " | ЛАЗЕР %d" % laser_level
 	if shuriken_unlocked:

@@ -1,21 +1,28 @@
 class_name PlasmaRound
 extends Node2D
 
-const SPEED := 150.0
-const HOMING_TIME := 0.8
-const ORPHAN_FLIGHT_TIME := 4.5
 const PROJECTILE_ART := preload("res://assets/projectiles_v1.png")
+
+@export_group("Полет снаряда")
+@export_range(10.0, 500.0, 5.0) var base_speed := 150.0
+@export_range(0.0, 3.0, 0.05) var homing_duration := 0.8
+@export_range(0.5, 10.0, 0.1) var normal_flight_duration := 4.5
+@export_range(0.5, 15.0, 0.1) var piercing_flight_duration := 7.0
+
+@export_group("Размер снаряда")
+@export var normal_size := Vector2(20.0, 11.0)
+@export var heavy_size := Vector2(32.0, 15.0)
 
 var target: AlienScout
 var damage := 10
 var active := false
 var visual_time := 0.0
 var travel_direction := Vector2.RIGHT
-var guidance_time_left := HOMING_TIME
+var guidance_time_left := 0.0
 var spread_angle := 0.0
 var target_was_alive := false
-var flight_speed := SPEED
-var flight_time_left := ORPHAN_FLIGHT_TIME
+var flight_speed := 0.0
+var flight_time_left := 0.0
 var prime_round := false
 var heavy_round := false
 var pierce_limit := 1
@@ -33,13 +40,13 @@ func activate(start_position: Vector2, new_target: AlienScout, new_damage: int, 
 	target = new_target
 	damage = new_damage
 	visual_time = 0.0
-	guidance_time_left = HOMING_TIME
+	guidance_time_left = homing_duration
 	target_was_alive = is_instance_valid(target)
-	flight_speed = SPEED * speed_multiplier
+	flight_speed = base_speed * speed_multiplier
 	heavy_round = is_heavy
 	pierce_limit = maxi(new_pierce_limit, 1)
 	penetrated_enemy_ids.clear()
-	flight_time_left = 7.0 if heavy_round and pierce_limit > 1 else ORPHAN_FLIGHT_TIME
+	flight_time_left = piercing_flight_duration if heavy_round and pierce_limit > 1 else normal_flight_duration
 	prime_round = is_prime
 	spread_angle = 0.0
 	if target_was_alive:
@@ -67,7 +74,7 @@ func _process(delta: float) -> void:
 		target = null
 		guidance_time_left = 0.0
 		if not heavy_round:
-			flight_time_left = ORPHAN_FLIGHT_TIME
+			flight_time_left = normal_flight_duration
 	if guidance_time_left > 0.0 and target_was_alive:
 		var guided_delta := minf(delta, guidance_time_left)
 		var aim := (target.global_position - global_position).normalized()
@@ -138,7 +145,7 @@ func _draw() -> void:
 	if prime_round:
 		draw_line(Vector2(-20.0, 0.0), Vector2(-3.0, 0.0), Color(0.25, 0.82, 1.0, 0.25), 7.0)
 		draw_line(Vector2(-18.0, 0.0), Vector2(-2.0, 0.0), Color(0.75, 0.96, 1.0, 0.85), 2.0)
-	_draw_projectile_frame(0, Vector2(32, 15) if heavy_round else Vector2(20, 11))
+	_draw_projectile_frame(0, heavy_size if heavy_round else normal_size)
 
 
 func _draw_projectile_frame(column: int, size: Vector2) -> void:
