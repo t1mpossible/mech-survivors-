@@ -16,6 +16,11 @@ const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
 const COMBAT_EFFECT := preload("res://scenes/combat_effect.tscn")
 const COMBAT_POPUP := preload("res://scenes/combat_popup.tscn")
 const HERO_WEAPON_EFFECTS := preload("res://assets/hero_weapon_effects_v1.png")
+const LASER_PULSE_FRAMES := [
+	preload("res://assets/laser_pulse_frame_1.png"),
+	preload("res://assets/laser_pulse_frame_2.png"),
+	preload("res://assets/laser_pulse_frame_3.png"),
+]
 const PLANET_COUNT := 5
 const WAVES_PER_PLANET := 6
 const WAVE_DURATION := 60.0
@@ -65,15 +70,6 @@ var shield_health := 0.0
 var experience := 0
 var level := 1
 var experience_to_next_level := BASE_EXPERIENCE_TO_LEVEL
-var laser_unlocked := false
-var laser_tick := 0.0
-var laser_target: AlienScout
-var laser_level := 1
-var laser_damage := 3
-var laser_cooldown := 0.25
-var laser_evolved := false
-var laser_beam_end := Vector2.ZERO
-var laser_beam_time_left := 0.0
 var shuriken_unlocked := false
 var shuriken_level := 1
 var shuriken_damage := 24
@@ -109,6 +105,7 @@ var xp_sound_time_left := 0.0
 @onready var mech_sprite: Sprite2D = $MechSprite
 @onready var autocannon: Autocannon = $Autocannon
 @onready var hunter_launcher: HunterLauncher = $HunterLauncher
+@onready var laser: LaserWeapon = $LaserWeapon
 
 
 func _ready() -> void:
@@ -343,7 +340,6 @@ func _process(delta: float) -> void:
 	_spawn_wave_powerup_if_needed()
 	speed_boost_time_left = maxf(speed_boost_time_left - delta, 0.0)
 	fire_rate_boost_time_left = maxf(fire_rate_boost_time_left - delta, 0.0)
-	laser_beam_time_left = maxf(laser_beam_time_left - delta, 0.0)
 	mech_hit_flash_time = maxf(mech_hit_flash_time - delta, 0.0)
 
 	if repair_per_second > 0.0:
@@ -354,16 +350,7 @@ func _process(delta: float) -> void:
 
 	hunter_launcher.tick(delta, mech_position, _get_nearest_enemy(), _get_fire_rate_multiplier())
 
-	if laser_unlocked:
-		laser_tick -= delta
-		laser_target = _get_nearest_enemy()
-		if laser_tick <= 0.0 and is_instance_valid(laser_target):
-			if laser_evolved:
-				_fire_laser_burst(laser_target)
-				laser_tick = 2.0
-			else:
-				_deal_weapon_damage(laser_target, laser_damage, "ЛАЗЕР")
-				laser_tick = laser_cooldown / _get_fire_rate_multiplier()
+	laser.tick(delta, mech_position, _get_nearest_enemy(), _get_fire_rate_multiplier())
 
 	if shuriken_unlocked:
 		shuriken_angle += delta * 5.36
@@ -438,15 +425,12 @@ func _on_hunter_launcher_fired() -> void:
 	$AudioFeedback.play_sound("missile")
 
 
-func _fire_laser_burst(target: AlienScout) -> void:
+func _on_laser_fired() -> void:
 	$AudioFeedback.play_sound("laser")
-	var beam_direction := (target.global_position - mech_position).normalized()
-	laser_beam_end = mech_position + beam_direction * 300.0
-	laser_beam_time_left = 0.14
-	for enemy_node in get_tree().get_nodes_in_group("enemies"):
-		var enemy := enemy_node as AlienScout
-		if enemy != null and Geometry2D.get_closest_point_to_segment(enemy.global_position, mech_position, laser_beam_end).distance_to(enemy.global_position) <= 12.0:
-			_deal_weapon_damage(enemy, 90, "ЛАЗЕР")
+
+
+func _on_laser_damage_requested(enemy: AlienScout, amount: int) -> void:
+	_deal_weapon_damage(enemy, amount, "ЛАЗЕР")
 
 
 func _deal_weapon_damage(enemy: AlienScout, amount: int, weapon_name: String) -> void:
@@ -898,6 +882,12 @@ func _open_upgrade_choice() -> void:
 			{"kind": "missile_branch_siege", "title": hunter_launcher.next_upgrade_title("siege")},
 			_get_character_upgrade(), _get_character_upgrade()
 		]
+	elif laser.unlocked and laser.level == 1 and laser.branch.is_empty():
+		available_upgrades = [
+			{"kind": "laser_branch_burn", "title": laser.next_upgrade_title("burn")},
+			{"kind": "laser_branch_pulse", "title": laser.next_upgrade_title("pulse")},
+			_get_character_upgrade(), _get_character_upgrade()
+		]
 	else:
 		var first_weapon := _get_autocannon_upgrade() if autocannon.level < 7 else _get_weapon_upgrade()
 		available_upgrades = [first_weapon, _get_weapon_upgrade(false), _get_character_upgrade(), _get_character_upgrade()]
@@ -916,13 +906,10 @@ func _get_weapon_upgrade(include_autocannon: bool = true) -> Dictionary:
 		choices.append({"kind": "unlock_missile", "title": "НОВОЕ ОРУЖИЕ: ОХОТНИЧЬИ РАКЕТЫ"})
 	elif hunter_launcher.unlocked and hunter_launcher.level >= 2 and hunter_launcher.level < 7:
 		choices.append({"kind": "missile_step", "title": hunter_launcher.next_upgrade_title()})
-	if not laser_unlocked and level >= 4:
-		choices.append({"kind": "unlock_laser", "title": "НОВОЕ ОРУЖИЕ: ПРОЖИГАЮЩИЙ ЛАЗЕР"})
-	elif laser_unlocked and laser_level == 6 and not laser_evolved:
-		choices.append({"kind": "evolve_laser", "title": "УР. 7: СОЛНЕЧНЫЙ ЛУЧ"})
-	elif laser_unlocked and laser_level < 6:
-		choices.append({"kind": "laser_damage", "title": "ЛАЗЕР: +4 урона в секунду"})
-		choices.append({"kind": "laser_rate", "title": "ЛАЗЕР: +20% к темпу"})
+	if not laser.unlocked and level >= 4:
+		choices.append({"kind": "unlock_laser", "title": "НОВОЕ ОРУЖИЕ: ЛАЗЕР"})
+	elif laser.unlocked and laser.level >= 2 and laser.level < 7:
+		choices.append({"kind": "laser_step", "title": laser.next_upgrade_title()})
 	if not shuriken_unlocked and level >= 5:
 		choices.append({"kind": "unlock_shuriken", "title": "НОВОЕ ОРУЖИЕ: СЮРИКЕНЫ"})
 	elif shuriken_unlocked and shuriken_level == 6 and not shuriken_evolved:
@@ -982,22 +969,23 @@ func _choose_upgrade(index: int) -> void:
 				else:
 					$Hud/EnemyStatus.text = "РАКЕТЫ УР. %d" % hunter_launcher.level
 		"unlock_laser":
-			laser_unlocked = true
-			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ПРОЖИГАЮЩИЙ ЛАЗЕР"
+			laser.unlock()
+			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ЛАЗЕР"
+		"laser_branch_burn":
+			if laser.choose_branch("burn"):
+				$Hud/EnemyStatus.text = "ПРОЖИГАЮЩИЙ ЛУЧ УР. 2"
+		"laser_branch_pulse":
+			if laser.choose_branch("pulse"):
+				$Hud/EnemyStatus.text = "ИМПУЛЬСНЫЙ ЛУЧ УР. 2"
+		"laser_step":
+			if laser.upgrade():
+				if laser.level == 7:
+					$Hud/EnemyStatus.text = "СОЛНЕЧНОЕ ЖАЛО" if laser.branch == "burn" else "СОЛНЕЧНЫЙ ИМПУЛЬС"
+				else:
+					$Hud/EnemyStatus.text = "ЛАЗЕР УР. %d" % laser.level
 		"unlock_shuriken":
 			shuriken_unlocked = true
 			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ВРАЩАЮЩИЙСЯ ШИП"
-		"laser_damage":
-			laser_level += 1
-			laser_damage += 1
-		"laser_rate":
-			laser_level += 1
-			laser_cooldown *= 0.8
-		"evolve_laser":
-			laser_level = 7
-			laser_evolved = true
-			laser_tick = 0.2
-			$Hud/EnemyStatus.text = "ЭВОЛЮЦИЯ: СОЛНЕЧНЫЙ ЛУЧ"
 		"shuriken_damage":
 			shuriken_level += 1
 			shuriken_damage += 12
@@ -1197,8 +1185,9 @@ func _update_upgrade_list() -> void:
 	if hunter_launcher.unlocked:
 		var launcher_name := "РОЙ" if hunter_launcher.branch == "swarm" else "ОСАДА" if hunter_launcher.branch == "siege" else "РАКЕТЫ"
 		weapon_line += " | %s %d" % [launcher_name, hunter_launcher.level]
-	if laser_unlocked:
-		weapon_line += " | ЛАЗЕР %d" % laser_level
+	if laser.unlocked:
+		var laser_name := "ПРОЖИГ" if laser.branch == "burn" else "ИМПУЛЬС" if laser.branch == "pulse" else "ЛАЗЕР"
+		weapon_line += " | %s %d" % [laser_name, laser.level]
 	if shuriken_unlocked:
 		weapon_line += " | СЮРИКЕНЫ %d" % shuriken_level
 	var mech_line := "БРОНЯ %d%% | ЩИТ %d" % [roundi(armor_reduction * 100.0), ceili(shield_max)]
@@ -1212,18 +1201,35 @@ func _draw() -> void:
 	# texture so the playable area does not look like a debug grid.
 	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(0.16, 0.07, 0.03, 0.18))
 
-	if laser_evolved and laser_beam_time_left > 0.0:
-		var burst_width := 10.0 + sin(weapon_visual_time * 28.0) * 1.5
-		draw_line(mech_position, laser_beam_end, Color("ff9a38"), burst_width)
-		draw_line(mech_position, laser_beam_end, Color("fff3c4"), 4.0)
-		_draw_hero_weapon_effect(0, mech_position, Vector2(26, 18), (laser_beam_end - mech_position).angle())
-		_draw_hero_weapon_effect(1, laser_beam_end, Vector2(28, 28), 0.0)
-	elif laser_unlocked and is_instance_valid(laser_target):
-		var beam_direction := laser_target.global_position - mech_position
-		draw_line(mech_position, laser_target.global_position, Color("41cfff"), 3.0 + sin(weapon_visual_time * 22.0) * 0.5)
-		draw_line(mech_position, laser_target.global_position, Color("e7fbff"), 1.0)
+	if laser.branch == "pulse" and laser.beam_time_left > 0.0:
+		var pulse_width := laser.current_stats().beam_width
+		var pulse_direction := laser.beam_end - laser.beam_start
+		var pulse_frame := laser.pulse_visual_frame()
+		var frame_texture: Texture2D = LASER_PULSE_FRAMES[pulse_frame]
+		var frame_alpha := 1.0
+		if pulse_frame == 2:
+			frame_alpha = clampf(laser.beam_time_left / (LaserWeapon.PULSE_VISUAL_TIME / 3.0), 0.0, 1.0)
+		var frame_spark_size: float = [14.0, 25.0, 11.0][pulse_frame]
+		if laser.level == 7:
+			draw_line(laser.beam_start, laser.beam_end, Color(1.0, 0.38, 0.08, 0.2 * frame_alpha), pulse_width * 1.6)
+		draw_set_transform(laser.beam_start, pulse_direction.angle())
+		draw_texture_rect(frame_texture, Rect2(0.0, -pulse_width * 4.0, pulse_direction.length(), pulse_width * 8.0), false, Color(1.0, 1.0, 1.0, frame_alpha))
+		draw_set_transform(Vector2.ZERO, 0.0)
+		_draw_hero_weapon_effect(0, laser.beam_start, Vector2(20, 14), pulse_direction.angle())
+		_draw_hero_weapon_effect(1, laser.beam_end, Vector2.ONE * frame_spark_size, 0.0)
+	elif laser.beam_active and is_instance_valid(laser.current_target):
+		var beam_direction := laser.current_target.global_position - mech_position
+		var burn_width := laser.current_stats().beam_width + sin(weapon_visual_time * 22.0) * 0.5
+		if laser.branch == "burn" and laser.level == 7:
+			draw_line(mech_position, laser.current_target.global_position, Color(0.12, 0.85, 1.0, 0.3), burn_width * 2.4)
+		else:
+			draw_line(mech_position, laser.current_target.global_position, Color(0.08, 0.75, 1.0, 0.17), burn_width * 2.1)
+		draw_line(mech_position, laser.current_target.global_position, Color("41cfff"), burn_width)
+		draw_line(mech_position, laser.current_target.global_position, Color("e7fbff"), 1.0)
+		var impact_pulse := 3.0 + sin(weapon_visual_time * 20.0) * 1.2
+		draw_arc(laser.current_target.global_position, laser.current_target.hit_radius + impact_pulse, 0.0, TAU, 20, Color(0.37, 0.9, 1.0, 0.7), 1.5)
 		_draw_hero_weapon_effect(0, mech_position, Vector2(20, 14), beam_direction.angle())
-		_draw_hero_weapon_effect(1, laser_target.global_position, Vector2(17, 17), 0.0)
+		_draw_hero_weapon_effect(1, laser.current_target.global_position, Vector2(17, 17), 0.0)
 	if shuriken_unlocked:
 		for angle_offset in _get_shuriken_angles():
 			var shuriken_position := mech_position + Vector2(cos(shuriken_angle + angle_offset), sin(shuriken_angle + angle_offset)) * shuriken_radius

@@ -1,0 +1,99 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/laser_weapon.gd" id="1_weapon"]
+[ext_resource type="Script" path="res://scripts/laser_level_data.gd" id="2_level"]
+
+[sub_resource type="Resource" id="Base"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 3
+tick_interval = 0.25
+beam_width = 3.0
+description = "Общий лазер первого уровня"
+
+[sub_resource type="Resource" id="Burn2"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 4
+tick_interval = 0.25
+beam_width = 3.0
+description = "Прожигает 3,5 с, затем отдыхает 1 с"
+
+[sub_resource type="Resource" id="Burn3"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 5
+tick_interval = 0.25
+beam_width = 3.0
+
+[sub_resource type="Resource" id="Burn4"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 6
+tick_interval = 0.25
+beam_width = 3.0
+
+[sub_resource type="Resource" id="Burn5"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 7
+tick_interval = 0.25
+beam_width = 3.0
+
+[sub_resource type="Resource" id="Burn6"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 9
+tick_interval = 0.25
+beam_width = 3.0
+
+[sub_resource type="Resource" id="Burn7"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 12
+tick_interval = 0.25
+beam_width = 5.0
+description = "Финал: мощный прожигающий луч"
+
+[sub_resource type="Resource" id="Pulse2"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 45
+beam_width = 12.0
+description = "Широкий залп, кулдаун 3 с"
+
+[sub_resource type="Resource" id="Pulse3"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 55
+beam_width = 13.0
+
+[sub_resource type="Resource" id="Pulse4"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 65
+beam_width = 14.0
+
+[sub_resource type="Resource" id="Pulse5"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 75
+beam_width = 15.0
+
+[sub_resource type="Resource" id="Pulse6"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 90
+beam_width = 16.0
+
+[sub_resource type="Resource" id="Pulse7"]
+resource_local_to_scene = true
+script = ExtResource("2_level")
+damage = 110
+beam_width = 18.0
+description = "Финал: широкий солнечный импульс"
+
+[node name="LaserWeapon" type="Node"]
+script = ExtResource("1_weapon")
+burn_levels = Array[ExtResource("2_level")]([SubResource("Base"), SubResource("Burn2"), SubResource("Burn3"), SubResource("Burn4"), SubResource("Burn5"), SubResource("Burn6"), SubResource("Burn7")])
+pulse_levels = Array[ExtResource("2_level")]([SubResource("Base"), SubResource("Pulse2"), SubResource("Pulse3"), SubResource("Pulse4"), SubResource("Pulse5"), SubResource("Pulse6"), SubResource("Pulse7")])

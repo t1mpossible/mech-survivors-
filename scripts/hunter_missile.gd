@@ -5,6 +5,10 @@ const BASE_SPEED := 95.0
 const ORPHAN_FLIGHT_TIME := 4.5
 const PROJECTILE_ART := preload("res://assets/projectiles_v1.png")
 
+@export_group("Плавное наведение")
+@export_range(30.0, 360.0, 5.0) var turn_degrees_per_second := 100.0
+@export_range(5.0, 30.0, 1.0) var maximum_guided_flight_time := 8.0
+
 var target: AlienScout
 var damage := 20
 var speed := BASE_SPEED
@@ -21,6 +25,7 @@ var active := false
 var visual_time := 0.0
 var travel_direction := Vector2.RIGHT
 var orphan_flight_time := 0.0
+var guided_flight_time_left := 0.0
 
 
 func _ready() -> void:
@@ -44,6 +49,9 @@ func activate(start_position: Vector2, new_target: AlienScout, new_damage: int, 
 	missile_style = new_style
 	visual_time = 0.0
 	orphan_flight_time = 0.0
+	guided_flight_time_left = maximum_guided_flight_time
+	travel_direction = Vector2.RIGHT
+	launch_direction = travel_direction
 	if is_instance_valid(target):
 		travel_direction = (target.global_position - global_position).normalized()
 		launch_direction = travel_direction
@@ -82,37 +90,84 @@ func _process(delta: float) -> void:
 		else:
 			queue_redraw()
 		return
-	if not is_instance_valid(target):
-		_begin_orphan_flight()
+	guided_flight_time_left -= delta
+	if guided_flight_time_left <= 0.0:
+		_detonate_on_timeout()
 		return
+	if not _target_is_alive(target):
+		target = _find_replacement_target()
+		if target == null:
+			_begin_orphan_flight()
+			return
+		launch_direction = (target.global_position - global_position).normalized()
+		arc_offset = 0.0
 
 	var offset := target.global_position - global_position
-	if offset.length() <= speed * delta + 6.0:
-		_explode()
-		if blast_count > 1:
-			exploding = true
-			blasts_left = blast_count - 1
-			blast_time_left = maxf(blast_pause, 0.01)
-			visible = false
-			target = null
-		else:
-			deactivate()
+	var hit_radius := target.hit_radius + 4.0
+	if offset.length() <= hit_radius:
+		_impact()
 		return
 
 	var aim_position := target.global_position
 	if not is_zero_approx(arc_offset):
 		var arc_remaining := maxf(1.0 - visual_time / 1.15, 0.0)
 		aim_position += launch_direction.orthogonal() * arc_offset * arc_remaining
-	travel_direction = (aim_position - global_position).normalized()
-	global_position += travel_direction * speed * delta
+	var desired_direction := (aim_position - global_position).normalized()
+	var maximum_turn := deg_to_rad(turn_degrees_per_second) * delta
+	var turn := clampf(travel_direction.angle_to(desired_direction), -maximum_turn, maximum_turn)
+	travel_direction = travel_direction.rotated(turn).normalized()
+	var next_position := global_position + travel_direction * speed * delta
+	if Geometry2D.get_closest_point_to_segment(target.global_position, global_position, next_position).distance_to(target.global_position) <= hit_radius:
+		global_position = target.global_position
+		_impact()
+		return
+	global_position = next_position
 	rotation = travel_direction.angle()
 	queue_redraw()
+
+
+func _impact() -> void:
+	_explode()
+	if blast_count > 1:
+		exploding = true
+		blasts_left = blast_count - 1
+		blast_time_left = maxf(blast_pause, 0.01)
+		visible = false
+		target = null
+	else:
+		deactivate()
+
+
+func _detonate_on_timeout() -> void:
+	if explosion_radius > 0.0 or (_target_is_alive(target) and global_position.distance_to(target.global_position) <= target.hit_radius + 4.0):
+		_impact()
+	else:
+		_spawn_explosion()
+		deactivate()
 
 
 func _begin_orphan_flight() -> void:
 	target = null
 	orphan_flight_time = ORPHAN_FLIGHT_TIME
 	queue_redraw()
+
+
+func _target_is_alive(enemy: Variant) -> bool:
+	return is_instance_valid(enemy) and enemy is AlienScout and enemy.is_inside_tree() and not enemy.is_queued_for_deletion() and enemy.health > 0
+
+
+func _find_replacement_target() -> AlienScout:
+	var nearest: AlienScout
+	var nearest_distance := INF
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := enemy_node as AlienScout
+		if not _target_is_alive(enemy):
+			continue
+		var distance := global_position.distance_squared_to(enemy.global_position)
+		if distance < nearest_distance:
+			nearest = enemy
+			nearest_distance = distance
+	return nearest
 
 
 func _explode() -> void:
