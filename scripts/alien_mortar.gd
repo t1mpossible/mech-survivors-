@@ -29,7 +29,7 @@ func take_damage(amount: int) -> void:
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
 	if health == 0:
-		if not split_child:
+		if not split_child and not training_dummy:
 			for side in [-16.0, 16.0]:
 				var child := preload("res://scenes/alien_mortar.tscn").instantiate() as AlienMortar
 				child.split_child = true

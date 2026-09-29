@@ -42,6 +42,7 @@ signal projectile_requested(start_position: Vector2, target: AlienScout, damage:
 @export_range(0.1, 10.0, 0.1) var desert_eagle_reload := 3.0
 
 var level := 1
+var enabled := true
 var branch := ""
 var damage := 18.0
 var shot_interval := 1.5
@@ -61,6 +62,8 @@ func _ready() -> void:
 
 
 func tick(delta: float, mech_position: Vector2, target: AlienScout, fire_rate_boost: float = 1.0) -> void:
+	if not enabled:
+		return
 	if branch == "heavy" and level == 7:
 		if burst_shots_left > 0:
 			burst_time_to_shot -= delta

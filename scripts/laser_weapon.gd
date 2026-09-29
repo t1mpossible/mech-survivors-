@@ -6,6 +6,8 @@ signal fired
 
 const BURN_DURATION := 3.5
 const BURN_COOLDOWN := 1.0
+const BURN_VISUAL_FRAMES := 3
+const BURN_VISUAL_FPS := 6.0
 const PULSE_COOLDOWN := 3.0
 const PULSE_RANGE := 300.0
 const PULSE_VISUAL_TIME := 1.0
@@ -73,6 +75,13 @@ func next_upgrade_title(which: String = "") -> String:
 	if selected_branch == "pulse":
 		return "ИМПУЛЬС %d: %d УР. ВСЕМ НА ЛИНИИ" % [next_level, stats.damage]
 	return "ПРОЖИГАНИЕ %d: %d УР. КАЖДЫЕ 0,25 С" % [next_level, stats.damage]
+
+
+func burn_visual_frame() -> int:
+	if branch != "burn" or not beam_active:
+		return -1
+	var elapsed := BURN_DURATION - active_time_left
+	return int(elapsed * BURN_VISUAL_FPS) % BURN_VISUAL_FRAMES
 
 
 func pulse_visual_frame() -> int:

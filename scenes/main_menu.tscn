@@ -172,9 +172,9 @@ text = "Выход из игры"
 [node name="LevelPanel" type="Panel" parent="."]
 visible = false
 offset_left = 55.0
-offset_top = 28.0
+offset_top = 20.0
 offset_right = 265.0
-offset_bottom = 154.0
+offset_bottom = 166.0
 theme_override_styles/panel = SubResource("MenuCard")
 
 [node name="Title" type="Label" parent="LevelPanel"]
@@ -247,11 +247,22 @@ theme_override_styles/pressed = SubResource("MenuButtonPressed")
 theme_override_styles/disabled = SubResource("MenuButtonDisabled")
 text = "ЗОНА 5 — ЗАКРЫТО"
 
+[node name="TestArena" type="Button" parent="LevelPanel"]
+offset_left = 20.0
+offset_top = 104.0
+offset_right = 190.0
+offset_bottom = 117.0
+theme_override_font_sizes/font_size = 7
+theme_override_styles/normal = SubResource("MenuButtonNormal")
+theme_override_styles/hover = SubResource("MenuButtonHover")
+theme_override_styles/pressed = SubResource("MenuButtonPressed")
+text = "ТЕСТОВАЯ АРЕНА"
+
 [node name="Back" type="Button" parent="LevelPanel"]
 offset_left = 55.0
-offset_top = 106.0
+offset_top = 122.0
 offset_right = 155.0
-offset_bottom = 119.0
+offset_bottom = 135.0
 theme_override_font_sizes/font_size = 7
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
@@ -333,6 +344,7 @@ text = "Назад"
 [connection signal="pressed" from="LevelPanel/Zone4" to="." method="_select_level" binds= [4]]
 [connection signal="pressed" from="LevelPanel/Zone5" to="." method="_select_level" binds= [5]]
 [connection signal="pressed" from="LevelPanel/Back" to="." method="_hide_levels"]
+[connection signal="pressed" from="LevelPanel/TestArena" to="." method="_select_test_arena"]
 [connection signal="value_changed" from="OptionsPanel/Volume" to="." method="_set_volume"]
 [connection signal="toggled" from="OptionsPanel/Fullscreen" to="." method="_set_fullscreen"]
 [connection signal="pressed" from="OptionsPanel/Back" to="." method="_hide_options"]

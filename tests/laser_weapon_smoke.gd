@@ -37,10 +37,25 @@ func _run() -> void:
 	if hits.size() != 1 or hits[0].damage != 12 or not burn.beam_active:
 		_fail("Burn laser must fire during active phase")
 		return
+	if burn.burn_visual_frame() != 0:
+		_fail("Burn animation must start at frame 0")
+		return
+	burn.tick(0.17, Vector2.ZERO, first)
+	if burn.burn_visual_frame() != 1:
+		_fail("Burn animation must advance to frame 1")
+		return
+	burn.tick(0.17, Vector2.ZERO, first)
+	if burn.burn_visual_frame() != 2:
+		_fail("Burn animation must advance to frame 2")
+		return
+	burn.tick(0.17, Vector2.ZERO, first)
+	if burn.burn_visual_frame() != 0:
+		_fail("Burn animation must loop back to frame 0")
+		return
 	burn.tick(3.5, Vector2.ZERO, first)
 	var hits_before_cooldown := hits.size()
 	burn.tick(0.9, Vector2.ZERO, first)
-	if hits.size() != hits_before_cooldown or burn.beam_active:
+	if hits.size() != hits_before_cooldown or burn.beam_active or burn.burn_visual_frame() != -1:
 		_fail("Burn laser must stop during its 1 second cooldown")
 		return
 	burn.tick(0.1, Vector2.ZERO, first)

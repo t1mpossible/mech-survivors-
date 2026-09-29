@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/autocannon.tscn" id="12_autocannon"]
 [ext_resource type="PackedScene" path="res://scenes/hunter_launcher.tscn" id="13_launcher"]
 [ext_resource type="PackedScene" path="res://scenes/laser_weapon.tscn" id="14_laser"]
+[ext_resource type="PackedScene" path="res://scenes/orbit_weapon.tscn" id="15_orbit"]
 
 [sub_resource type="ShaderMaterial" id="MechTreadMaterial"]
 resource_local_to_scene = true
@@ -99,6 +100,8 @@ position = Vector2(49, 55)
 [node name="HunterLauncher" parent="." instance=ExtResource("13_launcher")]
 
 [node name="LaserWeapon" parent="." instance=ExtResource("14_laser")]
+
+[node name="OrbitWeapon" parent="." instance=ExtResource("15_orbit")]
 
 [node name="AudioFeedback" type="Node" parent="." unique_id=76095691]
 script = ExtResource("11_audio")
@@ -757,6 +760,7 @@ text = "→"
 [connection signal="fired" from="HunterLauncher" to="." method="_on_hunter_launcher_fired"]
 [connection signal="missile_requested" from="HunterLauncher" to="." method="_on_hunter_missile_requested"]
 [connection signal="damage_requested" from="LaserWeapon" to="." method="_on_laser_damage_requested"]
+[connection signal="damage_requested" from="OrbitWeapon" to="." method="_deal_weapon_damage"]
 [connection signal="fired" from="LaserWeapon" to="." method="_on_laser_fired"]
 [connection signal="pressed" from="Hud/Wave1" to="." method="_debug_set_wave" binds= [1]]
 [connection signal="pressed" from="Hud/Wave2" to="." method="_debug_set_wave" binds= [2]]

@@ -74,3 +74,7 @@ func _select_level(planet: int) -> void:
 
 func _exit_game() -> void:
 	get_tree().quit()
+
+
+func _select_test_arena() -> void:
+	get_tree().change_scene_to_file("res://scenes/test_arena.tscn")
