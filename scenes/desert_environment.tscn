@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/desert_sand_tile_v1.png" id="1_sand"]
+[ext_resource type="Texture2D" path="res://assets/desert_decor_atlas_v1.png" id="2_decor"]
+[ext_resource type="Script" path="res://scripts/desert_decorations.gd" id="3_decor"]
+
+[node name="DesertEnvironment" type="Node2D"]
+z_index = -10
+
+[node name="Ground" type="Sprite2D" parent="."]
+texture_filter = 4
+texture_repeat = 2
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 1600, 900)
+texture = ExtResource("1_sand")
+
+[node name="Decorations" type="Node2D" parent="."]
+z_index = 1
+script = ExtResource("3_decor")
+atlas = ExtResource("2_decor")

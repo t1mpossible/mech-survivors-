@@ -11,39 +11,39 @@ func _new_game() -> void:
 
 
 func _show_levels() -> void:
-	$Buttons.visible = false
-	$Style.visible = false
-	$LevelPanel.visible = true
+	$MenuScale/Buttons.visible = false
+	$MenuScale/Style.visible = false
+	$MenuScale/LevelPanel.visible = true
 	_refresh_levels()
 
 
 func _hide_levels() -> void:
-	$LevelPanel.visible = false
-	$Buttons.visible = true
-	$Style.visible = true
+	$MenuScale/LevelPanel.visible = false
+	$MenuScale/Buttons.visible = true
+	$MenuScale/Style.visible = true
 
 
 func _show_options() -> void:
-	$Buttons.visible = false
-	$Style.visible = false
-	$OptionsPanel.visible = true
+	$MenuScale/Buttons.visible = false
+	$MenuScale/Style.visible = false
+	$MenuScale/OptionsPanel.visible = true
 	var settings := _get_settings()
 	if settings != null:
-		$OptionsPanel/Volume.value = float(settings.get("master_volume")) * 100.0
-		$OptionsPanel/Fullscreen.button_pressed = bool(settings.get("fullscreen"))
+		$MenuScale/OptionsPanel/Volume.value = float(settings.get("master_volume")) * 100.0
+		$MenuScale/OptionsPanel/Fullscreen.button_pressed = bool(settings.get("fullscreen"))
 
 
 func _hide_options() -> void:
-	$OptionsPanel.visible = false
-	$Buttons.visible = true
-	$Style.visible = true
+	$MenuScale/OptionsPanel.visible = false
+	$MenuScale/Buttons.visible = true
+	$MenuScale/Style.visible = true
 
 
 func _set_volume(value: float) -> void:
 	var settings := _get_settings()
 	if settings != null:
 		settings.call("set_master_volume", value / 100.0)
-	$OptionsPanel/VolumeValue.text = "%d%%" % roundi(value)
+	$MenuScale/OptionsPanel/VolumeValue.text = "%d%%" % roundi(value)
 
 
 func _set_fullscreen(enabled: bool) -> void:
@@ -57,10 +57,10 @@ func _get_settings() -> Node:
 
 
 func _refresh_levels() -> void:
-	if not has_node("LevelPanel"):
+	if not has_node("MenuScale/LevelPanel"):
 		return
 	for planet in range(1, 6):
-		var button := get_node("LevelPanel/Zone%d" % planet) as Button
+		var button := get_node("MenuScale/LevelPanel/Zone%d" % planet) as Button
 		var unlocked := planet <= GameState.highest_unlocked_planet
 		button.disabled = not unlocked
 		button.text = "ЗОНА %d" % planet if unlocked else "ЗОНА %d — ЗАКРЫТО" % planet

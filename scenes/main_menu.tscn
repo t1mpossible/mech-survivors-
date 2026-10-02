@@ -89,19 +89,23 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.008, 0.018, 0.04, 0.34)
 
-[node name="MenuCard" type="Panel" parent="."]
-offset_left = 108.0
-offset_top = 43.0
-offset_right = 212.0
-offset_bottom = 126.0
+[node name="MenuScale" type="Control" parent="."]
+offset_right = 640.0
+offset_bottom = 360.0
+
+[node name="MenuCard" type="Panel" parent="MenuScale"]
+offset_left = 216.0
+offset_top = 86.0
+offset_right = 424.0
+offset_bottom = 252.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("MenuCard")
 
-[node name="Title" type="Label" parent="."]
-offset_left = 70.0
-offset_top = 12.0
-offset_right = 250.0
-offset_bottom = 38.0
+[node name="Title" type="Label" parent="MenuScale"]
+offset_left = 140.0
+offset_top = 24.0
+offset_right = 500.0
+offset_bottom = 76.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.7, 0.96, 1, 1)
 theme_override_colors/font_outline_color = Color(0.015, 0.09, 0.16, 1)
@@ -109,242 +113,246 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/outline_size = 2
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 38
 text = "MECHFALL"
 
-[node name="Buttons" type="VBoxContainer" parent="."]
-offset_left = 114.0
-offset_top = 60.0
-offset_right = 206.0
-offset_bottom = 121.0
+[node name="Buttons" type="VBoxContainer" parent="MenuScale"]
+offset_left = 228.0
+offset_top = 120.0
+offset_right = 412.0
+offset_bottom = 242.0
 theme_override_constants/separation = 5
 
-[node name="Style" type="Label" parent="."]
-offset_left = 80.0
-offset_top = 48.0
-offset_right = 240.0
-offset_bottom = 52.0
+[node name="Style" type="Label" parent="MenuScale"]
+offset_left = 160.0
+offset_top = 96.0
+offset_right = 480.0
+offset_bottom = 104.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.54, 0.78, 0.88, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "ОПЕРАЦИЯ: ПУСТЫННАЯ ПЛАНЕТА"
 
-[node name="NewGame" type="Button" parent="Buttons"]
+[node name="NewGame" type="Button" parent="MenuScale/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 11)
+alignment = 1
 theme_override_colors/font_color = Color(0.82, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "Новая игра"
 
-[node name="Levels" type="Button" parent="Buttons"]
+[node name="Levels" type="Button" parent="MenuScale/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 11)
+alignment = 1
 theme_override_colors/font_color = Color(0.82, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "Выбор уровней"
 
-[node name="Options" type="Button" parent="Buttons"]
+[node name="Options" type="Button" parent="MenuScale/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 11)
+alignment = 1
 theme_override_colors/font_color = Color(0.82, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "Опции"
 
-[node name="Exit" type="Button" parent="Buttons"]
+[node name="Exit" type="Button" parent="MenuScale/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 11)
+alignment = 1
 theme_override_colors/font_color = Color(0.82, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "Выход из игры"
 
-[node name="LevelPanel" type="Panel" parent="."]
+[node name="LevelPanel" type="Panel" parent="MenuScale"]
 visible = false
-offset_left = 55.0
-offset_top = 20.0
-offset_right = 265.0
-offset_bottom = 166.0
+offset_left = 110.0
+offset_top = 40.0
+offset_right = 530.0
+offset_bottom = 332.0
 theme_override_styles/panel = SubResource("MenuCard")
 
-[node name="Title" type="Label" parent="LevelPanel"]
-offset_left = 10.0
-offset_top = 7.0
-offset_right = 200.0
-offset_bottom = 19.0
+[node name="Title" type="Label" parent="MenuScale/LevelPanel"]
+offset_left = 20.0
+offset_top = 14.0
+offset_right = 400.0
+offset_bottom = 38.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.45, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 18
 text = "ВЫБОР ЗОНЫ"
 
-[node name="Zone1" type="Button" parent="LevelPanel"]
-offset_left = 20.0
-offset_top = 24.0
-offset_right = 190.0
-offset_bottom = 37.0
-theme_override_font_sizes/font_size = 7
+[node name="Zone1" type="Button" parent="MenuScale/LevelPanel"]
+offset_left = 40.0
+offset_top = 48.0
+offset_right = 380.0
+offset_bottom = 74.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 theme_override_styles/disabled = SubResource("MenuButtonDisabled")
 text = "ЗОНА 1"
 
-[node name="Zone2" type="Button" parent="LevelPanel"]
-offset_left = 20.0
-offset_top = 40.0
-offset_right = 190.0
-offset_bottom = 53.0
-theme_override_font_sizes/font_size = 7
+[node name="Zone2" type="Button" parent="MenuScale/LevelPanel"]
+offset_left = 40.0
+offset_top = 80.0
+offset_right = 380.0
+offset_bottom = 106.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 theme_override_styles/disabled = SubResource("MenuButtonDisabled")
 text = "ЗОНА 2 — ЗАКРЫТО"
 
-[node name="Zone3" type="Button" parent="LevelPanel"]
-offset_left = 20.0
-offset_top = 56.0
-offset_right = 190.0
-offset_bottom = 69.0
-theme_override_font_sizes/font_size = 7
+[node name="Zone3" type="Button" parent="MenuScale/LevelPanel"]
+offset_left = 40.0
+offset_top = 112.0
+offset_right = 380.0
+offset_bottom = 138.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 theme_override_styles/disabled = SubResource("MenuButtonDisabled")
 text = "ЗОНА 3 — ЗАКРЫТО"
 
-[node name="Zone4" type="Button" parent="LevelPanel"]
-offset_left = 20.0
-offset_top = 72.0
-offset_right = 190.0
-offset_bottom = 85.0
-theme_override_font_sizes/font_size = 7
+[node name="Zone4" type="Button" parent="MenuScale/LevelPanel"]
+offset_left = 40.0
+offset_top = 144.0
+offset_right = 380.0
+offset_bottom = 170.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 theme_override_styles/disabled = SubResource("MenuButtonDisabled")
 text = "ЗОНА 4 — ЗАКРЫТО"
 
-[node name="Zone5" type="Button" parent="LevelPanel"]
-offset_left = 20.0
-offset_top = 88.0
-offset_right = 190.0
-offset_bottom = 101.0
-theme_override_font_sizes/font_size = 7
+[node name="Zone5" type="Button" parent="MenuScale/LevelPanel"]
+offset_left = 40.0
+offset_top = 176.0
+offset_right = 380.0
+offset_bottom = 202.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 theme_override_styles/disabled = SubResource("MenuButtonDisabled")
 text = "ЗОНА 5 — ЗАКРЫТО"
 
-[node name="TestArena" type="Button" parent="LevelPanel"]
-offset_left = 20.0
-offset_top = 104.0
-offset_right = 190.0
-offset_bottom = 117.0
-theme_override_font_sizes/font_size = 7
+[node name="TestArena" type="Button" parent="MenuScale/LevelPanel"]
+offset_left = 40.0
+offset_top = 208.0
+offset_right = 380.0
+offset_bottom = 234.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "ТЕСТОВАЯ АРЕНА"
 
-[node name="Back" type="Button" parent="LevelPanel"]
-offset_left = 55.0
-offset_top = 122.0
-offset_right = 155.0
-offset_bottom = 135.0
-theme_override_font_sizes/font_size = 7
+[node name="Back" type="Button" parent="MenuScale/LevelPanel"]
+offset_left = 110.0
+offset_top = 244.0
+offset_right = 310.0
+offset_bottom = 270.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "Назад"
 
-[node name="OptionsPanel" type="Panel" parent="."]
+[node name="OptionsPanel" type="Panel" parent="MenuScale"]
 visible = false
-offset_left = 72.0
-offset_top = 47.0
-offset_right = 248.0
-offset_bottom = 133.0
+offset_left = 144.0
+offset_top = 94.0
+offset_right = 496.0
+offset_bottom = 266.0
 theme_override_styles/panel = SubResource("MenuCard")
 
-[node name="Title" type="Label" parent="OptionsPanel"]
-offset_left = 12.0
-offset_top = 8.0
-offset_right = 164.0
-offset_bottom = 22.0
+[node name="Title" type="Label" parent="MenuScale/OptionsPanel"]
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 328.0
+offset_bottom = 44.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.65, 0.94, 1, 1)
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 18
 text = "ОПЦИИ"
 
-[node name="VolumeLabel" type="Label" parent="OptionsPanel"]
-offset_left = 16.0
-offset_top = 29.0
-offset_right = 100.0
-offset_bottom = 39.0
+[node name="VolumeLabel" type="Label" parent="MenuScale/OptionsPanel"]
+offset_left = 32.0
+offset_top = 58.0
+offset_right = 200.0
+offset_bottom = 78.0
 theme_override_colors/font_color = Color(0.72, 0.86, 0.93, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "ГРОМКОСТЬ"
 
-[node name="Volume" type="HSlider" parent="OptionsPanel"]
-offset_left = 16.0
-offset_top = 41.0
-offset_right = 126.0
-offset_bottom = 51.0
+[node name="Volume" type="HSlider" parent="MenuScale/OptionsPanel"]
+offset_left = 32.0
+offset_top = 82.0
+offset_right = 252.0
+offset_bottom = 102.0
 max_value = 100.0
 step = 5.0
 value = 65.0
 
-[node name="VolumeValue" type="Label" parent="OptionsPanel"]
-offset_left = 132.0
-offset_top = 41.0
-offset_right = 158.0
-offset_bottom = 51.0
+[node name="VolumeValue" type="Label" parent="MenuScale/OptionsPanel"]
+offset_left = 264.0
+offset_top = 82.0
+offset_right = 316.0
+offset_bottom = 102.0
 theme_override_colors/font_color = Color(1, 0.75, 0.34, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "65%"
 
-[node name="Fullscreen" type="CheckButton" parent="OptionsPanel"]
-offset_left = 16.0
-offset_top = 56.0
-offset_right = 158.0
-offset_bottom = 69.0
-theme_override_font_sizes/font_size = 6
+[node name="Fullscreen" type="CheckButton" parent="MenuScale/OptionsPanel"]
+offset_left = 32.0
+offset_top = 112.0
+offset_right = 316.0
+offset_bottom = 138.0
+theme_override_font_sizes/font_size = 12
 text = "ПОЛНЫЙ ЭКРАН"
 button_pressed = true
 
-[node name="Back" type="Button" parent="OptionsPanel"]
-offset_left = 48.0
-offset_top = 72.0
-offset_right = 128.0
-offset_bottom = 83.0
-theme_override_font_sizes/font_size = 7
+[node name="Back" type="Button" parent="MenuScale/OptionsPanel"]
+offset_left = 96.0
+offset_top = 144.0
+offset_right = 256.0
+offset_bottom = 166.0
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("MenuButtonNormal")
 theme_override_styles/hover = SubResource("MenuButtonHover")
 theme_override_styles/pressed = SubResource("MenuButtonPressed")
 text = "Назад"
 
-[connection signal="pressed" from="Buttons/NewGame" to="." method="_new_game"]
-[connection signal="pressed" from="Buttons/Levels" to="." method="_show_levels"]
-[connection signal="pressed" from="Buttons/Options" to="." method="_show_options"]
-[connection signal="pressed" from="Buttons/Exit" to="." method="_exit_game"]
-[connection signal="pressed" from="LevelPanel/Zone1" to="." method="_select_level" binds= [1]]
-[connection signal="pressed" from="LevelPanel/Zone2" to="." method="_select_level" binds= [2]]
-[connection signal="pressed" from="LevelPanel/Zone3" to="." method="_select_level" binds= [3]]
-[connection signal="pressed" from="LevelPanel/Zone4" to="." method="_select_level" binds= [4]]
-[connection signal="pressed" from="LevelPanel/Zone5" to="." method="_select_level" binds= [5]]
-[connection signal="pressed" from="LevelPanel/Back" to="." method="_hide_levels"]
-[connection signal="pressed" from="LevelPanel/TestArena" to="." method="_select_test_arena"]
-[connection signal="value_changed" from="OptionsPanel/Volume" to="." method="_set_volume"]
-[connection signal="toggled" from="OptionsPanel/Fullscreen" to="." method="_set_fullscreen"]
-[connection signal="pressed" from="OptionsPanel/Back" to="." method="_hide_options"]
+[connection signal="pressed" from="MenuScale/Buttons/NewGame" to="." method="_new_game"]
+[connection signal="pressed" from="MenuScale/Buttons/Levels" to="." method="_show_levels"]
+[connection signal="pressed" from="MenuScale/Buttons/Options" to="." method="_show_options"]
+[connection signal="pressed" from="MenuScale/Buttons/Exit" to="." method="_exit_game"]
+[connection signal="pressed" from="MenuScale/LevelPanel/Zone1" to="." method="_select_level" binds= [1]]
+[connection signal="pressed" from="MenuScale/LevelPanel/Zone2" to="." method="_select_level" binds= [2]]
+[connection signal="pressed" from="MenuScale/LevelPanel/Zone3" to="." method="_select_level" binds= [3]]
+[connection signal="pressed" from="MenuScale/LevelPanel/Zone4" to="." method="_select_level" binds= [4]]
+[connection signal="pressed" from="MenuScale/LevelPanel/Zone5" to="." method="_select_level" binds= [5]]
+[connection signal="pressed" from="MenuScale/LevelPanel/Back" to="." method="_hide_levels"]
+[connection signal="pressed" from="MenuScale/LevelPanel/TestArena" to="." method="_select_test_arena"]
+[connection signal="value_changed" from="MenuScale/OptionsPanel/Volume" to="." method="_set_volume"]
+[connection signal="toggled" from="MenuScale/OptionsPanel/Fullscreen" to="." method="_set_fullscreen"]
+[connection signal="pressed" from="MenuScale/OptionsPanel/Back" to="." method="_hide_options"]

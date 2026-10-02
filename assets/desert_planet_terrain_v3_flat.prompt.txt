@@ -1,0 +1,11 @@
+Built-in image_gen, 2026-10-01.
+Native output: 1586x992. Requested 4096x2560 was NOT honored; no resize/upscale applied.
+
+Use case: precise-object-edit.
+Asset type: final high-detail 2D game ground texture, landscape 16:10.
+Edit the supplied Mechfall desert terrain reference into a higher-detail, much flatter version of the SAME desert map style and warm ochre / terracotta palette.
+OUTPUT REQUEST: native high resolution 4096 x 2560 pixels if supported, otherwise the maximum native image resolution available. Render new crisp surface detail at full output resolution, not an enlarged blurry copy. This is intended to be zoomed into during gameplay.
+Keep the broad arrangement of sand flows and general map identity, but remove roughly 80 percent of rock formations and nearly all elevated cliffs. Replace them with flat wind-swept sand and occasional flush weathered sandstone patches. Remove the big central and lower-central rock islands entirely. Keep only very sparse small low rocks mainly at the far perimeter. Flatten dunes into very gentle low ripples. Preserve only a couple of very small half-buried metal scraps near the distant edges.
+View: orthographic overhead game map, no horizon. Vast walkable surface, 90 percent open ground. Highly resolved but restrained fine sand ripples, tiny discrete scattered pebbles, fine hairline erosion cracks in shallow patches, subtle broad color transitions. Clear hand-painted stylized sci-fi environment rendering. Sharp material detail without pixel noise, photographic grain, or heavy contrast. The center must remain legible for small characters and yellow XP orbs.
+Lighting: even soft daylight, no deep shadow pools, no blurry depth of field, no fog, no bloom.
+Do not include characters, vehicles, buildings, vegetation, UI, text, borders, grid, obvious roads, tall cliffs, deep canyons, or high dunes. Keep every pixel ground to all edges.

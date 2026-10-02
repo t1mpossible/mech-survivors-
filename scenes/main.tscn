@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c3k2od7umttb2" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/alien_scout.tscn" id="2_scout"]
 [ext_resource type="Script" uid="uid://dxbpuucqdk07v" path="res://scripts/pause_panel.gd" id="6_pause"]
-[ext_resource type="Texture2D" uid="uid://pxqjwcdgwmf7" path="res://assets/desert_planet_background.png" id="7_desert"]
+[ext_resource type="PackedScene" path="res://scenes/desert_environment.tscn" id="7_desert"]
 [ext_resource type="Texture2D" uid="uid://ckwtrvmpc253o" path="res://assets/mech_v3_directions.png" id="9_mech_walk"]
 [ext_resource type="Shader" uid="uid://sjkefkx6b2xa" path="res://scripts/mech_treads.gdshader" id="10_treads"]
 [ext_resource type="Script" uid="uid://bcdvmthbcbkhm" path="res://scripts/audio_feedback.gd" id="11_audio"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/hunter_launcher.tscn" id="13_launcher"]
 [ext_resource type="PackedScene" path="res://scenes/laser_weapon.tscn" id="14_laser"]
 [ext_resource type="PackedScene" path="res://scenes/orbit_weapon.tscn" id="15_orbit"]
+[ext_resource type="PackedScene" path="res://scenes/minimap.tscn" id="16_minimap"]
 
 [sub_resource type="ShaderMaterial" id="MechTreadMaterial"]
 resource_local_to_scene = true
@@ -18,7 +19,7 @@ shader = ExtResource("10_treads")
 shader_parameter/travel = 0.0
 
 [sub_resource type="StyleBoxFlat" id="StyleHudPanel"]
-bg_color = Color(0.02, 0.055, 0.1, 0.72)
+bg_color = Color(0.015, 0.04, 0.075, 0.3)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -28,7 +29,7 @@ shadow_size = 3
 shadow_offset = Vector2(1, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleHudPanelAccent"]
-bg_color = Color(0.055, 0.06, 0.09, 0.68)
+bg_color = Color(0.055, 0.06, 0.09, 0.52)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -39,6 +40,11 @@ shadow_offset = Vector2(1, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleXpBackground"]
 bg_color = Color(0.02, 0.05, 0.09, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.04, 0.08, 0.12, 1)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
@@ -53,6 +59,11 @@ corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="StyleHealthBackground"]
 bg_color = Color(0.02, 0.05, 0.09, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.04, 0.08, 0.12, 1)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
@@ -68,11 +79,7 @@ corner_radius_bottom_left = 2
 [node name="Main" type="Node2D" unique_id=1981888339]
 script = ExtResource("1_main")
 
-[node name="DesertBackground" type="Sprite2D" parent="." unique_id=1131695581]
-show_behind_parent = true
-position = Vector2(800, 450)
-scale = Vector2(1.3, 0.75)
-texture = ExtResource("7_desert")
+[node name="DesertBackground" parent="." instance=ExtResource("7_desert")]
 
 [node name="MechSprite" type="Sprite2D" parent="." unique_id=2092117371]
 material = SubResource("MechTreadMaterial")
@@ -84,7 +91,7 @@ vframes = 2
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=950270940]
 position = Vector2(800, 450)
-zoom = Vector2(0.5, 0.5)
+zoom = Vector2(1, 1)
 limit_left = 0
 limit_top = 0
 limit_right = 1600
@@ -110,650 +117,634 @@ script = ExtResource("11_audio")
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=515854718]
 
-[node name="WavePanel" type="Panel" parent="Hud" unique_id=588043690]
-z_index = -1
-offset_left = 4.0
+[node name="HudScale" type="Control" parent="Hud"]
+offset_right = 640.0
+offset_bottom = 360.0
+
+[node name="Minimap" parent="Hud/HudScale" instance=ExtResource("16_minimap")]
+
+[node name="Title" type="Label" parent="Hud/HudScale" unique_id=559856810]
+offset_left = 12.0
 offset_top = 4.0
-offset_right = 142.0
-offset_bottom = 34.0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleHudPanel")
-
-[node name="StatusPanel" type="Panel" parent="Hud" unique_id=197889952]
-z_index = -1
-offset_left = 201.0
-offset_top = 4.0
-offset_right = 316.0
-offset_bottom = 39.0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleHudPanelAccent")
-
-[node name="LoadoutPanel" type="Panel" parent="Hud" unique_id=1203896600]
-z_index = -1
-offset_left = 4.0
-offset_top = 36.0
-offset_right = 152.0
-offset_bottom = 56.0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleHudPanel")
-
-[node name="Title" type="Label" parent="Hud" unique_id=559856810]
-offset_left = 8.0
-offset_top = 7.0
-offset_right = 190.0
+offset_right = 170.0
 offset_bottom = 22.0
-theme_override_colors/font_color = Color(0.72, 0.91, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.02, 0.07, 0.12, 1)
+theme_override_colors/font_color = Color(0.04, 0.08, 0.12, 1)
+theme_override_colors/font_shadow_color = Color(0.87, 0.94, 0.94, 0.85)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 14
 text = "MECHFALL"
 
-[node name="Hint" type="Label" parent="Hud" unique_id=942107196]
-offset_left = 8.0
-offset_top = 158.0
-offset_right = 190.0
-offset_bottom = 174.0
+[node name="Zone" type="Label" parent="Hud/HudScale"]
+offset_left = 24.0
+offset_top = 23.0
+offset_right = 186.0
+offset_bottom = 38.0
+theme_override_colors/font_color = Color(0.94, 0.98, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10
+text = "ЗОНА 1"
+
+[node name="Hint" type="Label" parent="Hud/HudScale" unique_id=942107196]
+visible = false
+offset_left = 16.0
+offset_top = 316.0
+offset_right = 380.0
+offset_bottom = 348.0
 theme_override_colors/font_color = Color(0.55, 0.7, 0.72, 1)
-theme_override_font_sizes/font_size = 5
-text = "WASD / стрелки или кнопки"
+theme_override_font_sizes/font_size = 10
+text = "WASD / стрелки • ESC — пауза"
 
-[node name="Wave" type="Label" parent="Hud" unique_id=1005278072]
-offset_left = 8.0
-offset_top = 20.0
-offset_right = 137.0
-offset_bottom = 28.0
-theme_override_colors/font_color = Color(0.72, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 6
-text = "ЗОНА 1  •  ВОЛНА 1"
+[node name="Wave" type="Label" parent="Hud/HudScale" unique_id=1005278072]
+offset_left = 250.0
+offset_top = 5.0
+offset_right = 390.0
+offset_bottom = 22.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.93, 0.97, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 11
+text = "WAVE 1"
 
-[node name="WaveTimer" type="Label" parent="Hud" unique_id=1188077121]
-offset_left = 8.0
-offset_top = 25.0
-offset_right = 137.0
-offset_bottom = 34.0
-theme_override_colors/font_color = Color(1, 0.78, 0.2, 1)
-theme_override_font_sizes/font_size = 6
-text = "СТАДИЯ 1  •  60 СЕК"
+[node name="WaveTimer" type="Label" parent="Hud/HudScale" unique_id=1188077121]
+offset_left = 250.0
+offset_top = 23.0
+offset_right = 390.0
+offset_bottom = 40.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.95, 0.98, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10
+text = "TIME 60s"
 
-[node name="Fps" type="Label" parent="Hud" unique_id=31702534]
-offset_left = 270.0
-offset_top = 34.0
-offset_right = 314.0
-offset_bottom = 45.0
-theme_override_font_sizes/font_size = 5
+[node name="Fps" type="Label" parent="Hud/HudScale" unique_id=31702534]
+visible = false
+offset_left = 580.0
+offset_top = 60.0
+offset_right = 628.0
+offset_bottom = 74.0
+theme_override_font_sizes/font_size = 7
 text = "FPS 60"
 
-[node name="Wave1" type="Button" parent="Hud" unique_id=111241507]
-offset_left = 194.0
-offset_top = 45.0
-offset_right = 214.0
-offset_bottom = 56.0
-theme_override_font_sizes/font_size = 6
+[node name="Wave1" type="Button" parent="Hud/HudScale" unique_id=111241507]
+visible = false
+offset_left = 388.0
+offset_top = 90.0
+offset_right = 428.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 12
 text = "W1"
 
-[node name="Wave2" type="Button" parent="Hud" unique_id=1350274399]
-offset_left = 215.0
-offset_top = 45.0
-offset_right = 235.0
-offset_bottom = 56.0
-theme_override_font_sizes/font_size = 6
+[node name="Wave2" type="Button" parent="Hud/HudScale" unique_id=1350274399]
+visible = false
+offset_left = 430.0
+offset_top = 90.0
+offset_right = 470.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 12
 text = "W2"
 
-[node name="Wave3" type="Button" parent="Hud" unique_id=1796233399]
-offset_left = 236.0
-offset_top = 45.0
-offset_right = 256.0
-offset_bottom = 56.0
-theme_override_font_sizes/font_size = 6
+[node name="Wave3" type="Button" parent="Hud/HudScale" unique_id=1796233399]
+visible = false
+offset_left = 472.0
+offset_top = 90.0
+offset_right = 512.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 12
 text = "W3"
 
-[node name="Wave4" type="Button" parent="Hud" unique_id=253747977]
-offset_left = 257.0
-offset_top = 45.0
-offset_right = 277.0
-offset_bottom = 56.0
-theme_override_font_sizes/font_size = 6
+[node name="Wave4" type="Button" parent="Hud/HudScale" unique_id=253747977]
+visible = false
+offset_left = 514.0
+offset_top = 90.0
+offset_right = 554.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 12
 text = "W4"
 
-[node name="Wave5" type="Button" parent="Hud" unique_id=1659096950]
-offset_left = 278.0
-offset_top = 45.0
-offset_right = 298.0
-offset_bottom = 56.0
-theme_override_font_sizes/font_size = 6
+[node name="Wave5" type="Button" parent="Hud/HudScale" unique_id=1659096950]
+visible = false
+offset_left = 556.0
+offset_top = 90.0
+offset_right = 596.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 12
 text = "W5"
 
-[node name="Wave6" type="Button" parent="Hud" unique_id=120094390]
-offset_left = 299.0
-offset_top = 45.0
-offset_right = 319.0
-offset_bottom = 56.0
-theme_override_font_sizes/font_size = 6
+[node name="Wave6" type="Button" parent="Hud/HudScale" unique_id=120094390]
+visible = false
+offset_left = 598.0
+offset_top = 90.0
+offset_right = 638.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 12
 text = "W6"
 
-[node name="DebugLevel" type="Button" parent="Hud" unique_id=748028751]
-offset_left = 287.0
-offset_top = 58.0
-offset_right = 319.0
-offset_bottom = 70.0
-theme_override_font_sizes/font_size = 6
+[node name="DebugLevel" type="Button" parent="Hud/HudScale" unique_id=748028751]
+visible = false
+offset_left = 574.0
+offset_top = 116.0
+offset_right = 638.0
+offset_bottom = 140.0
+theme_override_font_sizes/font_size = 12
 text = "+LV"
 
-[node name="DebugScout" type="Button" parent="Hud" unique_id=1041974503]
+[node name="DebugScout" type="Button" parent="Hud/HudScale" unique_id=1041974503]
 visible = false
-offset_left = 8.0
-offset_top = 58.0
-offset_right = 55.0
-offset_bottom = 72.0
-theme_override_font_sizes/font_size = 6
+offset_left = 16.0
+offset_top = 116.0
+offset_right = 110.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 12
 text = "+ МЕЛКИЙ"
 
-[node name="DebugBrute" type="Button" parent="Hud" unique_id=582499329]
+[node name="DebugBrute" type="Button" parent="Hud/HudScale" unique_id=582499329]
 visible = false
-offset_left = 58.0
-offset_top = 58.0
-offset_right = 105.0
-offset_bottom = 72.0
-theme_override_font_sizes/font_size = 6
+offset_left = 116.0
+offset_top = 116.0
+offset_right = 210.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 12
 text = "+ СРЕДНИЙ"
 
-[node name="DebugElite" type="Button" parent="Hud" unique_id=288656814]
+[node name="DebugElite" type="Button" parent="Hud/HudScale" unique_id=288656814]
 visible = false
-offset_left = 108.0
-offset_top = 58.0
-offset_right = 155.0
-offset_bottom = 72.0
-theme_override_font_sizes/font_size = 6
+offset_left = 216.0
+offset_top = 116.0
+offset_right = 310.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 12
 text = "+ БОЛЬШОЙ"
 
-[node name="DebugBoss" type="Button" parent="Hud" unique_id=1045072987]
+[node name="DebugBoss" type="Button" parent="Hud/HudScale" unique_id=1045072987]
 visible = false
-offset_left = 158.0
-offset_top = 58.0
-offset_right = 205.0
-offset_bottom = 72.0
-theme_override_font_sizes/font_size = 6
+offset_left = 316.0
+offset_top = 116.0
+offset_right = 410.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 12
 text = "+ БОСС"
 
-[node name="EnemyStatus" type="Label" parent="Hud" unique_id=170200410]
+[node name="EnemyStatus" type="Label" parent="Hud/HudScale" unique_id=170200410]
 visible = false
-offset_left = 8.0
-offset_top = 20.0
-offset_right = 180.0
-offset_bottom = 33.0
+offset_left = 16.0
+offset_top = 40.0
+offset_right = 360.0
+offset_bottom = 66.0
 theme_override_colors/font_color = Color(1, 0.55, 0.4, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "СИГНАЛ: РАЗВЕДЧИК ОБНАРУЖЕН"
 
-[node name="Level" type="Label" parent="Hud" unique_id=1152549347]
-offset_left = 205.0
-offset_top = 7.0
-offset_right = 229.0
-offset_bottom = 18.0
-theme_override_colors/font_color = Color(1, 0.89, 0.35, 1)
-theme_override_font_sizes/font_size = 6
+[node name="Level" type="Label" parent="Hud/HudScale" unique_id=1152549347]
+offset_left = 402.0
+offset_top = 24.0
+offset_right = 441.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(0.94, 0.98, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10
 text = "LV 1"
 
-[node name="ExperienceBar" type="ProgressBar" parent="Hud" unique_id=1024860453]
-offset_left = 247.0
-offset_top = 9.0
-offset_right = 314.0
-offset_bottom = 14.0
+[node name="ExperienceBar" type="ProgressBar" parent="Hud/HudScale" unique_id=1024860453]
+offset_left = 518.0
+offset_top = 30.0
+offset_right = 625.0
+offset_bottom = 39.0
 theme_override_styles/background = SubResource("StyleXpBackground")
 theme_override_styles/fill = SubResource("StyleXpFill")
 max_value = 10.0
 show_percentage = false
 
-[node name="ExperienceValue" type="Label" parent="Hud" unique_id=1034032945]
-offset_left = 227.0
-offset_top = 7.0
-offset_right = 245.0
-offset_bottom = 18.0
-theme_override_colors/font_color = Color(1, 0.89, 0.35, 1)
-theme_override_font_sizes/font_size = 5
-text = "0/10"
+[node name="ExperienceValue" type="Label" parent="Hud/HudScale" unique_id=1034032945]
+offset_left = 445.0
+offset_top = 24.0
+offset_right = 514.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(0.94, 0.98, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10
+text = "XP 0/25"
 
-[node name="HealthBar" type="ProgressBar" parent="Hud" unique_id=1421237078]
-offset_left = 247.0
-offset_top = 21.0
-offset_right = 314.0
-offset_bottom = 26.0
+[node name="HealthBar" type="ProgressBar" parent="Hud/HudScale" unique_id=1421237078]
+offset_left = 518.0
+offset_top = 10.0
+offset_right = 625.0
+offset_bottom = 19.0
 theme_override_styles/background = SubResource("StyleHealthBackground")
 theme_override_styles/fill = SubResource("StyleHealthFill")
 value = 100.0
 show_percentage = false
 
-[node name="HealthValue" type="Label" parent="Hud" unique_id=1737690902]
-offset_left = 205.0
-offset_top = 20.0
-offset_right = 245.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(0.42, 0.95, 0.7, 1)
-theme_override_font_sizes/font_size = 5
-text = "100/100"
+[node name="HealthValue" type="Label" parent="Hud/HudScale" unique_id=1737690902]
+offset_left = 445.0
+offset_top = 4.0
+offset_right = 514.0
+offset_bottom = 22.0
+theme_override_colors/font_color = Color(0.94, 0.98, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10
+text = "HP 100"
 
-[node name="ShieldValue" type="Label" parent="Hud" unique_id=491115677]
-offset_left = 205.0
-offset_top = 31.0
-offset_right = 268.0
-offset_bottom = 39.0
+[node name="ShieldValue" type="Label" parent="Hud/HudScale" unique_id=491115677]
+visible = false
+offset_left = 626.0
+offset_top = 13.0
+offset_right = 632.0
+offset_bottom = 28.0
 theme_override_colors/font_color = Color(0.5, 0.75, 1, 1)
-theme_override_font_sizes/font_size = 5
+theme_override_font_sizes/font_size = 7
 text = "ЩИТ 0/0"
 
-[node name="UpgradeList" type="Label" parent="Hud" unique_id=1542536692]
-offset_left = 8.0
-offset_top = 39.0
-offset_right = 148.0
-offset_bottom = 55.0
+[node name="UpgradeList" type="Label" parent="Hud/HudScale" unique_id=1542536692]
+visible = false
+offset_left = 164.0
+offset_top = 13.0
+offset_right = 400.0
+offset_bottom = 28.0
 theme_override_colors/font_color = Color(0.65, 0.8, 0.88, 1)
-theme_override_font_sizes/font_size = 4
+theme_override_font_sizes/font_size = 7
 text = "ПУШКА 1
 БРОНЯ 0% | ЩИТ 0"
 
-[node name="UpgradePanel" type="Panel" parent="Hud" unique_id=326528651]
+[node name="UpgradePanel" type="Panel" parent="Hud/HudScale" unique_id=326528651]
 process_mode = 3
 visible = false
-offset_left = 65.0
-offset_top = 38.0
-offset_right = 255.0
-offset_bottom = 150.0
+offset_left = 130.0
+offset_top = 76.0
+offset_right = 510.0
+offset_bottom = 300.0
 
-[node name="Title" type="Label" parent="Hud/UpgradePanel" unique_id=1247445067]
+[node name="Title" type="Label" parent="Hud/HudScale/UpgradePanel" unique_id=1247445067]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 8.0
-offset_right = 170.0
-offset_bottom = 19.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 340.0
+offset_bottom = 38.0
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 18
 text = "НОВЫЙ УРОВЕНЬ"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Hud/UpgradePanel" unique_id=624369483]
+[node name="Subtitle" type="Label" parent="Hud/HudScale/UpgradePanel" unique_id=624369483]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 21.0
-offset_right = 170.0
-offset_bottom = 29.0
+offset_left = 20.0
+offset_top = 42.0
+offset_right = 340.0
+offset_bottom = 58.0
 theme_override_colors/font_color = Color(0.7, 0.85, 0.9, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 14
 text = "Выберите одно улучшение"
 horizontal_alignment = 1
 
-[node name="OptionA" type="Button" parent="Hud/UpgradePanel" unique_id=1460514263]
+[node name="OptionA" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=1460514263]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 36.0
-offset_right = 168.0
-offset_bottom = 49.0
-theme_override_font_sizes/font_size = 7
-
-[node name="OptionB" type="Button" parent="Hud/UpgradePanel" unique_id=355387298]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 54.0
-offset_right = 168.0
-offset_bottom = 67.0
-theme_override_font_sizes/font_size = 7
-
-[node name="OptionC" type="Button" parent="Hud/UpgradePanel" unique_id=195572078]
-layout_mode = 0
-offset_left = 12.0
+offset_left = 24.0
 offset_top = 72.0
-offset_right = 168.0
-offset_bottom = 85.0
-theme_override_font_sizes/font_size = 7
+offset_right = 336.0
+offset_bottom = 98.0
+theme_override_font_sizes/font_size = 14
 
-[node name="OptionD" type="Button" parent="Hud/UpgradePanel" unique_id=870097387]
+[node name="OptionB" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=355387298]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 90.0
-offset_right = 168.0
-offset_bottom = 103.0
-theme_override_font_sizes/font_size = 7
+offset_left = 24.0
+offset_top = 108.0
+offset_right = 336.0
+offset_bottom = 134.0
+theme_override_font_sizes/font_size = 14
 
-[node name="GameOver" type="Panel" parent="Hud" unique_id=264490346]
+[node name="OptionC" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=195572078]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 336.0
+offset_bottom = 170.0
+theme_override_font_sizes/font_size = 14
+
+[node name="OptionD" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=870097387]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 180.0
+offset_right = 336.0
+offset_bottom = 206.0
+theme_override_font_sizes/font_size = 14
+
+[node name="GameOver" type="Panel" parent="Hud/HudScale" unique_id=264490346]
 process_mode = 3
 visible = false
-offset_left = 65.0
-offset_top = 45.0
-offset_right = 255.0
-offset_bottom = 135.0
+offset_left = 190.0
+offset_top = 121.0
+offset_right = 450.0
+offset_bottom = 239.0
 
-[node name="Title" type="Label" parent="Hud/GameOver" unique_id=1873098156]
+[node name="Title" type="Label" parent="Hud/HudScale/GameOver" unique_id=1873098156]
+theme_override_font_sizes/font_size = 16
 layout_mode = 0
 offset_left = 10.0
-offset_top = 8.0
-offset_right = 160.0
-offset_bottom = 27.0
+offset_top = 10.0
+offset_right = 250.0
+offset_bottom = 34.0
 theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
 text = "КОНЕЦ ИГРЫ"
 horizontal_alignment = 1
 
-[node name="Restart" type="Button" parent="Hud/GameOver" unique_id=723906865]
+[node name="Restart" type="Button" parent="Hud/HudScale/GameOver" unique_id=723906865]
+theme_override_font_sizes/font_size = 12
 layout_mode = 0
-offset_left = 25.0
-offset_top = 30.0
-offset_right = 145.0
-offset_bottom = 45.0
+offset_left = 30.0
+offset_top = 44.0
+offset_right = 230.0
+offset_bottom = 68.0
+alignment = 1
 text = "Сыграть заново"
 
-[node name="Menu" type="Button" parent="Hud/GameOver" unique_id=2023017467]
+[node name="Menu" type="Button" parent="Hud/HudScale/GameOver" unique_id=2023017467]
+theme_override_font_sizes/font_size = 12
 layout_mode = 0
-offset_left = 25.0
-offset_top = 48.0
-offset_right = 145.0
-offset_bottom = 63.0
+offset_left = 30.0
+offset_top = 76.0
+offset_right = 230.0
+offset_bottom = 100.0
+alignment = 1
 text = "Меню"
 
-[node name="Victory" type="Panel" parent="Hud" unique_id=2131317258]
+[node name="Victory" type="Panel" parent="Hud/HudScale" unique_id=2131317258]
 process_mode = 3
 visible = false
-offset_left = 58.0
-offset_top = 42.0
-offset_right = 262.0
-offset_bottom = 142.0
+offset_left = 116.0
+offset_top = 84.0
+offset_right = 524.0
+offset_bottom = 284.0
 theme_override_styles/panel = SubResource("StyleHudPanel")
 
-[node name="Title" type="Label" parent="Hud/Victory" unique_id=1760057443]
+[node name="Title" type="Label" parent="Hud/HudScale/Victory" unique_id=1760057443]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 9.0
-offset_right = 194.0
-offset_bottom = 25.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 388.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0.82, 0.26, 1)
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 22
 text = "ПОБЕДА"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Hud/Victory" unique_id=1835316431]
+[node name="Subtitle" type="Label" parent="Hud/HudScale/Victory" unique_id=1835316431]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 27.0
-offset_right = 194.0
-offset_bottom = 38.0
+offset_left = 20.0
+offset_top = 54.0
+offset_right = 388.0
+offset_bottom = 76.0
 theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "ОСАДНЫЙ ХОДОК УНИЧТОЖЕН"
 horizontal_alignment = 1
 
-[node name="BattleSummary" type="Button" parent="Hud/Victory" unique_id=1565460511]
+[node name="BattleSummary" type="Button" parent="Hud/HudScale/Victory" unique_id=1565460511]
 layout_mode = 0
-offset_left = 27.0
-offset_top = 53.0
-offset_right = 177.0
-offset_bottom = 68.0
-theme_override_font_sizes/font_size = 7
+offset_left = 54.0
+offset_top = 106.0
+offset_right = 354.0
+offset_bottom = 136.0
+theme_override_font_sizes/font_size = 14
 text = "ИТОГИ БОЯ"
 
-[node name="NextZone" type="Button" parent="Hud/Victory" unique_id=1595005456]
+[node name="NextZone" type="Button" parent="Hud/HudScale/Victory" unique_id=1595005456]
 layout_mode = 0
-offset_left = 27.0
-offset_top = 75.0
-offset_right = 177.0
-offset_bottom = 90.0
-theme_override_font_sizes/font_size = 7
+offset_left = 54.0
+offset_top = 150.0
+offset_right = 354.0
+offset_bottom = 180.0
+theme_override_font_sizes/font_size = 14
 text = "ПЕРЕЙТИ В ЗОНУ 2"
 
-[node name="BattleSummary" type="Panel" parent="Hud" unique_id=771804392]
+[node name="BattleSummary" type="Panel" parent="Hud/HudScale" unique_id=771804392]
 process_mode = 3
 visible = false
-offset_left = 50.0
-offset_top = 31.0
-offset_right = 270.0
-offset_bottom = 153.0
+offset_left = 100.0
+offset_top = 62.0
+offset_right = 540.0
+offset_bottom = 306.0
 theme_override_styles/panel = SubResource("StyleHudPanel")
 
-[node name="Title" type="Label" parent="Hud/BattleSummary" unique_id=1083061034]
+[node name="Title" type="Label" parent="Hud/HudScale/BattleSummary" unique_id=1083061034]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 8.0
-offset_right = 210.0
-offset_bottom = 23.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 420.0
+offset_bottom = 46.0
 theme_override_colors/font_color = Color(1, 0.82, 0.26, 1)
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 20
 text = "ИТОГИ БОЯ"
 horizontal_alignment = 1
 
-[node name="BestWeapon" type="Label" parent="Hud/BattleSummary" unique_id=833325083]
+[node name="BestWeapon" type="Label" parent="Hud/HudScale/BattleSummary" unique_id=833325083]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 27.0
-offset_right = 208.0
-offset_bottom = 38.0
+offset_left = 24.0
+offset_top = 54.0
+offset_right = 416.0
+offset_bottom = 76.0
 theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "ЛИДЕР: АВТОПУШКА — 0 УРОНА"
 horizontal_alignment = 1
 
-[node name="Autocannon" type="Label" parent="Hud/BattleSummary" unique_id=1134772616]
+[node name="Autocannon" type="Label" parent="Hud/HudScale/BattleSummary" unique_id=1134772616]
 layout_mode = 0
-offset_left = 26.0
-offset_top = 44.0
-offset_right = 194.0
-offset_bottom = 53.0
+offset_left = 52.0
+offset_top = 88.0
+offset_right = 388.0
+offset_bottom = 106.0
 theme_override_colors/font_color = Color(0.84, 0.93, 0.98, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 14
 text = "АВТОПУШКА        0"
 
-[node name="Missiles" type="Label" parent="Hud/BattleSummary" unique_id=643192172]
+[node name="Missiles" type="Label" parent="Hud/HudScale/BattleSummary" unique_id=643192172]
 layout_mode = 0
-offset_left = 26.0
-offset_top = 55.0
-offset_right = 194.0
-offset_bottom = 64.0
+offset_left = 52.0
+offset_top = 110.0
+offset_right = 388.0
+offset_bottom = 128.0
 theme_override_colors/font_color = Color(0.84, 0.93, 0.98, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 14
 text = "ОХОТНИЧЬИ РАКЕТЫ  0"
 
-[node name="Laser" type="Label" parent="Hud/BattleSummary" unique_id=931914342]
+[node name="Laser" type="Label" parent="Hud/HudScale/BattleSummary" unique_id=931914342]
 layout_mode = 0
-offset_left = 26.0
-offset_top = 66.0
-offset_right = 194.0
-offset_bottom = 75.0
+offset_left = 52.0
+offset_top = 132.0
+offset_right = 388.0
+offset_bottom = 150.0
 theme_override_colors/font_color = Color(0.84, 0.93, 0.98, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 14
 text = "ЛАЗЕР             0"
 
-[node name="Shurikens" type="Label" parent="Hud/BattleSummary" unique_id=1079249269]
+[node name="Shurikens" type="Label" parent="Hud/HudScale/BattleSummary" unique_id=1079249269]
 layout_mode = 0
-offset_left = 26.0
-offset_top = 77.0
-offset_right = 194.0
-offset_bottom = 86.0
+offset_left = 52.0
+offset_top = 154.0
+offset_right = 388.0
+offset_bottom = 172.0
 theme_override_colors/font_color = Color(0.84, 0.93, 0.98, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 14
 text = "СЮРИКЕНЫ          0"
 
-[node name="Back" type="Button" parent="Hud/BattleSummary" unique_id=634649318]
+[node name="Back" type="Button" parent="Hud/HudScale/BattleSummary" unique_id=634649318]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 98.0
-offset_right = 95.0
-offset_bottom = 113.0
-theme_override_font_sizes/font_size = 7
+offset_left = 48.0
+offset_top = 196.0
+offset_right = 190.0
+offset_bottom = 226.0
+theme_override_font_sizes/font_size = 14
 text = "Назад"
 
-[node name="NextZone" type="Button" parent="Hud/BattleSummary" unique_id=874961596]
+[node name="NextZone" type="Button" parent="Hud/HudScale/BattleSummary" unique_id=874961596]
 layout_mode = 0
-offset_left = 105.0
-offset_top = 98.0
-offset_right = 196.0
-offset_bottom = 113.0
-theme_override_font_sizes/font_size = 7
+offset_left = 210.0
+offset_top = 196.0
+offset_right = 392.0
+offset_bottom = 226.0
+theme_override_font_sizes/font_size = 14
 text = "ЗОНА 2"
 
-[node name="PausePanel" type="Panel" parent="Hud" unique_id=580504851]
+[node name="PausePanel" type="Panel" parent="Hud/HudScale" unique_id=580504851]
 process_mode = 3
 visible = false
-offset_left = 85.0
-offset_top = 56.0
-offset_right = 235.0
-offset_bottom = 150.0
+offset_left = 170.0
+offset_top = 112.0
+offset_right = 470.0
+offset_bottom = 300.0
 theme_override_styles/panel = SubResource("StyleHudPanel")
 script = ExtResource("6_pause")
 
-[node name="Title" type="Label" parent="Hud/PausePanel" unique_id=240893195]
+[node name="Title" type="Label" parent="Hud/HudScale/PausePanel" unique_id=240893195]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 9.0
-offset_right = 140.0
-offset_bottom = 25.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 280.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(0.72, 0.91, 1, 1)
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 20
 text = "ПАУЗА"
 horizontal_alignment = 1
 
-[node name="Hint" type="Label" parent="Hud/PausePanel" unique_id=1980319130]
+[node name="Hint" type="Label" parent="Hud/HudScale/PausePanel" unique_id=1980319130]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 26.0
-offset_right = 140.0
-offset_bottom = 37.0
+offset_left = 20.0
+offset_top = 52.0
+offset_right = 280.0
+offset_bottom = 74.0
 theme_override_colors/font_color = Color(0.65, 0.75, 0.8, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "ESC — продолжить"
 horizontal_alignment = 1
 
-[node name="Resume" type="Button" parent="Hud/PausePanel" unique_id=1310488119]
+[node name="Resume" type="Button" parent="Hud/HudScale/PausePanel" unique_id=1310488119]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 42.0
-offset_right = 130.0
-offset_bottom = 56.0
-theme_override_font_sizes/font_size = 7
+offset_left = 40.0
+offset_top = 84.0
+offset_right = 260.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 14
 text = "Продолжить"
 
-[node name="Menu" type="Button" parent="Hud/PausePanel" unique_id=535843140]
+[node name="Menu" type="Button" parent="Hud/HudScale/PausePanel" unique_id=535843140]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 78.0
-offset_right = 130.0
-offset_bottom = 92.0
-theme_override_font_sizes/font_size = 7
+offset_left = 40.0
+offset_top = 156.0
+offset_right = 260.0
+offset_bottom = 184.0
+theme_override_font_sizes/font_size = 14
 text = "В меню"
 
-[node name="Options" type="Button" parent="Hud/PausePanel" unique_id=1936002733]
+[node name="Options" type="Button" parent="Hud/HudScale/PausePanel" unique_id=1936002733]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 60.0
-offset_right = 130.0
-offset_bottom = 74.0
-theme_override_font_sizes/font_size = 7
+offset_left = 40.0
+offset_top = 120.0
+offset_right = 260.0
+offset_bottom = 148.0
+theme_override_font_sizes/font_size = 14
 text = "Опции"
 
-[node name="OptionsPanel" type="Panel" parent="Hud/PausePanel" unique_id=1964550325]
+[node name="OptionsPanel" type="Panel" parent="Hud/HudScale/PausePanel" unique_id=1964550325]
 process_mode = 3
 visible = false
 layout_mode = 0
-offset_left = 5.0
-offset_top = 5.0
-offset_right = 145.0
-offset_bottom = 89.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 290.0
+offset_bottom = 178.0
 theme_override_styles/panel = SubResource("StyleHudPanelAccent")
 
-[node name="Title" type="Label" parent="Hud/PausePanel/OptionsPanel" unique_id=1570514113]
+[node name="Title" type="Label" parent="Hud/HudScale/PausePanel/OptionsPanel" unique_id=1570514113]
 layout_mode = 0
-offset_left = 8.0
-offset_top = 6.0
-offset_right = 132.0
-offset_bottom = 18.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 264.0
+offset_bottom = 36.0
 theme_override_colors/font_color = Color(0.72, 0.91, 1, 1)
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 18
 text = "ОПЦИИ"
 horizontal_alignment = 1
 
-[node name="VolumeLabel" type="Label" parent="Hud/PausePanel/OptionsPanel" unique_id=2086916435]
+[node name="VolumeLabel" type="Label" parent="Hud/HudScale/PausePanel/OptionsPanel" unique_id=2086916435]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 24.0
-offset_right = 70.0
-offset_bottom = 34.0
+offset_left = 20.0
+offset_top = 48.0
+offset_right = 140.0
+offset_bottom = 68.0
 theme_override_colors/font_color = Color(0.78, 0.9, 0.94, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "ЗВУК"
 
-[node name="Volume" type="HSlider" parent="Hud/PausePanel/OptionsPanel" unique_id=1301854533]
+[node name="Volume" type="HSlider" parent="Hud/HudScale/PausePanel/OptionsPanel" unique_id=1301854533]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 35.0
-offset_right = 100.0
-offset_bottom = 43.0
+offset_left = 20.0
+offset_top = 70.0
+offset_right = 200.0
+offset_bottom = 86.0
 
-[node name="VolumeValue" type="Label" parent="Hud/PausePanel/OptionsPanel" unique_id=1242299842]
+[node name="VolumeValue" type="Label" parent="Hud/HudScale/PausePanel/OptionsPanel" unique_id=1242299842]
 layout_mode = 0
-offset_left = 105.0
-offset_top = 33.0
-offset_right = 130.0
-offset_bottom = 43.0
+offset_left = 210.0
+offset_top = 66.0
+offset_right = 260.0
+offset_bottom = 86.0
 theme_override_colors/font_color = Color(1, 0.84, 0.35, 1)
-theme_override_font_sizes/font_size = 6
+theme_override_font_sizes/font_size = 12
 text = "65%"
 
-[node name="Fullscreen" type="CheckButton" parent="Hud/PausePanel/OptionsPanel" unique_id=2042203145]
+[node name="Fullscreen" type="CheckButton" parent="Hud/HudScale/PausePanel/OptionsPanel" unique_id=2042203145]
 layout_mode = 0
-offset_left = 10.0
-offset_top = 48.0
-offset_right = 130.0
-offset_bottom = 60.0
-theme_override_font_sizes/font_size = 6
+offset_left = 20.0
+offset_top = 96.0
+offset_right = 260.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 12
 text = "ПОЛНЫЙ ЭКРАН"
 
-[node name="Back" type="Button" parent="Hud/PausePanel/OptionsPanel" unique_id=1776732540]
+[node name="Back" type="Button" parent="Hud/HudScale/PausePanel/OptionsPanel" unique_id=1776732540]
 layout_mode = 0
-offset_left = 32.0
-offset_top = 65.0
-offset_right = 108.0
-offset_bottom = 78.0
-theme_override_font_sizes/font_size = 7
+offset_left = 64.0
+offset_top = 130.0
+offset_right = 216.0
+offset_bottom = 156.0
+theme_override_font_sizes/font_size = 14
 text = "Назад"
 
-[node name="Up" type="Button" parent="Hud" unique_id=148837477]
-offset_left = 267.0
-offset_top = 119.0
-offset_right = 293.0
-offset_bottom = 143.0
-theme_override_colors/font_color = Color(0.78, 0.95, 1, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.85, 0.35, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 15
-text = "↑"
 
-[node name="Left" type="Button" parent="Hud" unique_id=1156362194]
-offset_left = 238.0
-offset_top = 145.0
-offset_right = 264.0
-offset_bottom = 169.0
-theme_override_colors/font_color = Color(0.78, 0.95, 1, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.85, 0.35, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 15
-text = "←"
 
-[node name="Down" type="Button" parent="Hud" unique_id=1045505851]
-offset_left = 267.0
-offset_top = 145.0
-offset_right = 293.0
-offset_bottom = 169.0
-theme_override_colors/font_color = Color(0.78, 0.95, 1, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.85, 0.35, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 15
-text = "↓"
 
-[node name="Right" type="Button" parent="Hud" unique_id=225249606]
-offset_left = 296.0
-offset_top = 145.0
-offset_right = 322.0
-offset_bottom = 169.0
-theme_override_colors/font_color = Color(0.78, 0.95, 1, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.85, 0.35, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 15
-text = "→"
 
 [connection signal="fired" from="Autocannon" to="." method="_on_autocannon_fired"]
 [connection signal="projectile_requested" from="Autocannon" to="." method="_on_autocannon_projectile_requested"]
@@ -762,38 +753,30 @@ text = "→"
 [connection signal="damage_requested" from="LaserWeapon" to="." method="_on_laser_damage_requested"]
 [connection signal="damage_requested" from="OrbitWeapon" to="." method="_deal_weapon_damage"]
 [connection signal="fired" from="LaserWeapon" to="." method="_on_laser_fired"]
-[connection signal="pressed" from="Hud/Wave1" to="." method="_debug_set_wave" binds= [1]]
-[connection signal="pressed" from="Hud/Wave2" to="." method="_debug_set_wave" binds= [2]]
-[connection signal="pressed" from="Hud/Wave3" to="." method="_debug_set_wave" binds= [3]]
-[connection signal="pressed" from="Hud/Wave4" to="." method="_debug_set_wave" binds= [4]]
-[connection signal="pressed" from="Hud/Wave5" to="." method="_debug_set_wave" binds= [5]]
-[connection signal="pressed" from="Hud/Wave6" to="." method="_debug_set_wave" binds= [6]]
-[connection signal="pressed" from="Hud/DebugLevel" to="." method="_debug_level_up"]
-[connection signal="pressed" from="Hud/DebugScout" to="." method="_debug_spawn_scout"]
-[connection signal="pressed" from="Hud/DebugBrute" to="." method="_debug_spawn_brute"]
-[connection signal="pressed" from="Hud/DebugElite" to="." method="_debug_spawn_elite"]
-[connection signal="pressed" from="Hud/DebugBoss" to="." method="_debug_spawn_boss"]
-[connection signal="pressed" from="Hud/UpgradePanel/OptionA" to="." method="_choose_upgrade" binds= [0]]
-[connection signal="pressed" from="Hud/UpgradePanel/OptionB" to="." method="_choose_upgrade" binds= [1]]
-[connection signal="pressed" from="Hud/UpgradePanel/OptionC" to="." method="_choose_upgrade" binds= [2]]
-[connection signal="pressed" from="Hud/UpgradePanel/OptionD" to="." method="_choose_upgrade" binds= [3]]
-[connection signal="pressed" from="Hud/GameOver/Restart" to="." method="_restart_game"]
-[connection signal="pressed" from="Hud/GameOver/Menu" to="." method="_return_to_menu"]
-[connection signal="pressed" from="Hud/Victory/BattleSummary" to="." method="_show_battle_summary"]
-[connection signal="pressed" from="Hud/Victory/NextZone" to="." method="_continue_after_victory"]
-[connection signal="pressed" from="Hud/BattleSummary/Back" to="." method="_hide_battle_summary"]
-[connection signal="pressed" from="Hud/BattleSummary/NextZone" to="." method="_continue_after_victory"]
-[connection signal="pressed" from="Hud/PausePanel/Resume" to="." method="_resume_game"]
-[connection signal="pressed" from="Hud/PausePanel/Menu" to="." method="_return_to_menu"]
-[connection signal="pressed" from="Hud/PausePanel/Options" to="." method="_show_pause_options"]
-[connection signal="value_changed" from="Hud/PausePanel/OptionsPanel/Volume" to="." method="_set_pause_volume"]
-[connection signal="toggled" from="Hud/PausePanel/OptionsPanel/Fullscreen" to="." method="_set_pause_fullscreen"]
-[connection signal="pressed" from="Hud/PausePanel/OptionsPanel/Back" to="." method="_hide_pause_options"]
-[connection signal="button_down" from="Hud/Up" to="." method="_set_touch_direction" binds= ["up", true]]
-[connection signal="button_up" from="Hud/Up" to="." method="_set_touch_direction" binds= ["up", false]]
-[connection signal="button_down" from="Hud/Left" to="." method="_set_touch_direction" binds= ["left", true]]
-[connection signal="button_up" from="Hud/Left" to="." method="_set_touch_direction" binds= ["left", false]]
-[connection signal="button_down" from="Hud/Down" to="." method="_set_touch_direction" binds= ["down", true]]
-[connection signal="button_up" from="Hud/Down" to="." method="_set_touch_direction" binds= ["down", false]]
-[connection signal="button_down" from="Hud/Right" to="." method="_set_touch_direction" binds= ["right", true]]
-[connection signal="button_up" from="Hud/Right" to="." method="_set_touch_direction" binds= ["right", false]]
+[connection signal="pressed" from="Hud/HudScale/Wave1" to="." method="_debug_set_wave" binds= [1]]
+[connection signal="pressed" from="Hud/HudScale/Wave2" to="." method="_debug_set_wave" binds= [2]]
+[connection signal="pressed" from="Hud/HudScale/Wave3" to="." method="_debug_set_wave" binds= [3]]
+[connection signal="pressed" from="Hud/HudScale/Wave4" to="." method="_debug_set_wave" binds= [4]]
+[connection signal="pressed" from="Hud/HudScale/Wave5" to="." method="_debug_set_wave" binds= [5]]
+[connection signal="pressed" from="Hud/HudScale/Wave6" to="." method="_debug_set_wave" binds= [6]]
+[connection signal="pressed" from="Hud/HudScale/DebugLevel" to="." method="_debug_level_up"]
+[connection signal="pressed" from="Hud/HudScale/DebugScout" to="." method="_debug_spawn_scout"]
+[connection signal="pressed" from="Hud/HudScale/DebugBrute" to="." method="_debug_spawn_brute"]
+[connection signal="pressed" from="Hud/HudScale/DebugElite" to="." method="_debug_spawn_elite"]
+[connection signal="pressed" from="Hud/HudScale/DebugBoss" to="." method="_debug_spawn_boss"]
+[connection signal="pressed" from="Hud/HudScale/UpgradePanel/OptionA" to="." method="_choose_upgrade" binds= [0]]
+[connection signal="pressed" from="Hud/HudScale/UpgradePanel/OptionB" to="." method="_choose_upgrade" binds= [1]]
+[connection signal="pressed" from="Hud/HudScale/UpgradePanel/OptionC" to="." method="_choose_upgrade" binds= [2]]
+[connection signal="pressed" from="Hud/HudScale/UpgradePanel/OptionD" to="." method="_choose_upgrade" binds= [3]]
+[connection signal="pressed" from="Hud/HudScale/GameOver/Restart" to="." method="_restart_game"]
+[connection signal="pressed" from="Hud/HudScale/GameOver/Menu" to="." method="_return_to_menu"]
+[connection signal="pressed" from="Hud/HudScale/Victory/BattleSummary" to="." method="_show_battle_summary"]
+[connection signal="pressed" from="Hud/HudScale/Victory/NextZone" to="." method="_continue_after_victory"]
+[connection signal="pressed" from="Hud/HudScale/BattleSummary/Back" to="." method="_hide_battle_summary"]
+[connection signal="pressed" from="Hud/HudScale/BattleSummary/NextZone" to="." method="_continue_after_victory"]
+[connection signal="pressed" from="Hud/HudScale/PausePanel/Resume" to="." method="_resume_game"]
+[connection signal="pressed" from="Hud/HudScale/PausePanel/Menu" to="." method="_return_to_menu"]
+[connection signal="pressed" from="Hud/HudScale/PausePanel/Options" to="." method="_show_pause_options"]
+[connection signal="value_changed" from="Hud/HudScale/PausePanel/OptionsPanel/Volume" to="." method="_set_pause_volume"]
+[connection signal="toggled" from="Hud/HudScale/PausePanel/OptionsPanel/Fullscreen" to="." method="_set_pause_fullscreen"]
+[connection signal="pressed" from="Hud/HudScale/PausePanel/OptionsPanel/Back" to="." method="_hide_pause_options"]

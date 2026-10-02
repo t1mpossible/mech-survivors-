@@ -1,0 +1,9 @@
+Built-in image_gen, 2026-10-01. Used as the eight-cell decoration atlas for the desert map.
+
+Use case: stylized-concept
+Asset type: transparent sprite atlas for a 2D top-down desert survivor game.
+Primary request: create exactly 8 separate small desert ground decorations in a clean 4 columns × 2 rows atlas. Objects, left to right top row: small sandstone pebble cluster; flat weathered red rock; tiny two-stone cluster; a round low boulder. Bottom row: half-buried dark metal panel; broken small antenna; narrow crashed mechanical fragment; tiny exposed alien mineral shard.
+Style/medium: detailed hand-painted top-down sprites, same warm dusty orange desert and sci-fi visual style as the existing Mechfall terrain and blue-grey mech. Soft small contact shadows directly below each object.
+Composition/framing: each object centered in its equally sized cell, generous transparent padding all around, no overlap between cells. Every sprite must be clearly isolated.
+Background: genuinely transparent alpha background, no canvas color, no checkerboard, no landscape, no ground texture.
+Constraints: no text, no border, no grids or cell lines, no characters, no vehicles, no buildings, no large rocks, no glowing effects.

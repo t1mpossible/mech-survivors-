@@ -1,0 +1,6 @@
+Built-in image_gen, 2026-10-01.
+Generated supporting square sand detail tile. Sampled repeatedly by desert_ground.gdshader; not a full-map 4K source.
+
+Use case: stylized-concept. Asset type: seamless tileable microdetail ground texture for a 2D hand-painted desert game.
+Generate a square maximum-native-resolution texture of FLAT fine compact desert sand viewed exactly vertically from above. This is a supporting detail texture, not a whole map.
+Monochrome neutral middle grey centered around 50% brightness; subtle luminance variation only, between approximately 35% and 65%. Many tiny crisp irregular grains interspersed with very subtle fine natural wind ripples and occasional tiny low pebbles, all at the same small material scale. Hand-painted stylized material detail, not photographic noise. Flat even light, no directional shadow or gradient. No big shapes, no rocks larger than tiny grains, no dunes, no cracks, no landmarks, no objects, no text, no border, no glow, no perspective. Seamless tiling horizontally and vertically with matched opposing edges. Uniform average brightness across the entire texture. No blur, no depth of field. It will be overlaid very subtly as fine detail on an ochre terrain painting.

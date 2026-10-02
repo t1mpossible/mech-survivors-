@@ -35,7 +35,10 @@ func _ready() -> void:
 	mech_position = Vector2(800, 680)
 	mech_sprite.global_position = mech_position
 	for node_name in ["Wave1", "Wave2", "Wave3", "Wave4", "Wave5", "Wave6", "DebugLevel", "Level", "ExperienceBar", "ExperienceValue", "EnemyStatus"]:
-		get_node("Hud/" + node_name).hide()
+		get_node("Hud/HudScale/" + node_name).hide()
+	$Hud/HudScale/UpgradeList.visible = true
+	$Hud/HudScale/UpgradeList.position = Vector2(12, 60)
+	$Hud/HudScale/UpgradeList.size = Vector2(280, 18)
 	_create_training_controls()
 	var scenes: Array[PackedScene] = [SCOUT_SCENE, BRUTE_SCENE, ELITE_SCENE, BOMBER_SCENE, TURRET_SCENE, MORTAR_SCENE, MORTAR_SCENE, BOSS_SCENE]
 	var names := ["Разведчик", "Бронированный", "Элитный", "Ходячая мина", "Турель", "Миномётчик", "Малый миномётчик", "Босс"]
@@ -123,27 +126,27 @@ func _update_training_respawns(delta: float) -> void:
 
 
 func _create_training_controls() -> void:
-	level_down = _training_button("−", Vector2(6, 60), Vector2(16, 8))
+	level_down = _training_button("−", Vector2(12, 120), Vector2(32, 16))
 	level_down.pressed.connect(_change_test_level.bind(-1))
-	level_up = _training_button("+", Vector2(25, 60), Vector2(16, 8))
+	level_up = _training_button("+", Vector2(50, 120), Vector2(32, 16))
 	level_up.pressed.connect(_change_test_level.bind(1))
-	var clear_button := _training_button("Без оружия", Vector2(44, 60), Vector2(37, 8))
+	var clear_button := _training_button("Без оружия", Vector2(88, 120), Vector2(74, 16))
 	clear_button.pressed.connect(_equip_test_weapon.bind(""))
 	training_stats = Label.new()
-	training_stats.position = Vector2(6, 71)
-	training_stats.add_theme_font_size_override("font_size", 7)
-	$Hud.add_child(training_stats)
+	training_stats.position = Vector2(12, 142)
+	training_stats.add_theme_font_size_override("font_size", 14)
+	$Hud/HudScale.add_child(training_stats)
 	dps_label = Label.new()
 	dps_label.name = "TrainingDpsLabel"
-	dps_label.position = Vector2(6, 84)
-	dps_label.add_theme_font_size_override("font_size", 6)
+	dps_label.position = Vector2(12, 168)
+	dps_label.add_theme_font_size_override("font_size", 12)
 	dps_label.add_theme_color_override("font_color", Color("88dfff"))
 	dps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	$Hud.add_child(dps_label)
+	$Hud/HudScale.add_child(dps_label)
 	dps_bar = ProgressBar.new()
 	dps_bar.name = "TrainingDpsBar"
-	dps_bar.position = Vector2(6, 94)
-	dps_bar.size = Vector2(100, 4)
+	dps_bar.position = Vector2(12, 188)
+	dps_bar.size = Vector2(200, 8)
 	dps_bar.show_percentage = false
 	dps_bar.max_value = 100.0
 	dps_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -155,15 +158,15 @@ func _create_training_controls() -> void:
 	fill.set_corner_radius_all(2)
 	dps_bar.add_theme_stylebox_override("background", background)
 	dps_bar.add_theme_stylebox_override("fill", fill)
-	$Hud.add_child(dps_bar)
-	dps_bar.set_deferred("size", Vector2(100, 4))
+	$Hud/HudScale.add_child(dps_bar)
+	dps_bar.set_deferred("size", Vector2(200, 8))
 
 
 func _training_button(caption: String, location: Vector2, dimensions: Vector2) -> Button:
 	var button := Button.new()
 	button.text = caption
 	button.position = location
-	button.add_theme_font_size_override("font_size", 5)
+	button.add_theme_font_size_override("font_size", 10)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.025, 0.07, 0.1, 0.8)
 	style.set_corner_radius_all(2)
@@ -178,7 +181,7 @@ func _training_button(caption: String, location: Vector2, dimensions: Vector2) -
 	button.add_theme_stylebox_override("pressed", hover)
 	button.add_theme_stylebox_override("disabled", style)
 	button.size = dimensions
-	$Hud.add_child(button)
+	$Hud/HudScale.add_child(button)
 	# The inherited theme recomputes its minimum size after entering the tree.
 	button.set_deferred("size", dimensions)
 	return button
@@ -288,7 +291,7 @@ func _update_training_dps() -> void:
 
 
 func _update_upgrade_list() -> void:
-	$Hud/UpgradeList.text = "%s • УР. %d/7" % [WEAPON_NAMES[selected_weapon], test_weapon_level] if WEAPON_NAMES.has(selected_weapon) else "БЕЗ ОРУЖИЯ • ПОДБЕРИ ПРЕДМЕТ"
+	$Hud/HudScale/UpgradeList.text = "%s • УР. %d/7" % [WEAPON_NAMES[selected_weapon], test_weapon_level] if WEAPON_NAMES.has(selected_weapon) else "БЕЗ ОРУЖИЯ • ПОДБЕРИ ПРЕДМЕТ"
 	if is_instance_valid(training_stats):
 		training_stats.text = "НАНЕСЕНО УРОНА: %d" % training_damage
 		level_down.disabled = selected_weapon.is_empty() or test_weapon_level <= 1
@@ -296,9 +299,10 @@ func _update_upgrade_list() -> void:
 
 
 func _update_wave_hud() -> void:
-	$Hud/Wave.text = "ТЕСТОВАЯ АРЕНА"
-	$Hud/WaveTimer.text = "МИШЕНИ АФК • ВОЗРОЖДЕНИЕ 2 С"
-	$Hud/Hint.text = "Подбери оружие • ESC — пауза"
+	$Hud/HudScale/Zone.text = "ТЕСТОВАЯ ЗОНА"
+	$Hud/HudScale/Wave.text = "WAVE TEST"
+	$Hud/HudScale/WaveTimer.text = "РЕСПАВН 2с"
+	$Hud/HudScale/Hint.text = "Подбери оружие • ESC — пауза"
 
 
 # Training does not run waves, grant XP, hurt the mech or alter campaign progress.

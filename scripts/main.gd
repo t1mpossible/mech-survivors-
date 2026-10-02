@@ -41,7 +41,6 @@ const TARGET_REFRESH_INTERVAL := 0.15
 
 var mech_position := MAP_SIZE / 2.0
 var tread_travel := 0.0
-var touch_direction := {"up": false, "down": false, "left": false, "right": false}
 var small_spawn_time_left := 0.2
 var medium_spawn_time_left := 0.6
 var bomber_spawn_time_left := 1.0
@@ -116,6 +115,8 @@ var xp_sound_time_left := 0.0
 
 
 func _ready() -> void:
+	$Hud/HudScale/Minimap.configure($DesertBackground/Ground, MAP_SIZE)
+	$Hud/HudScale/Minimap.set_player_position(mech_position)
 	_warm_projectile_pools()
 	planet_number = GameState.selected_planet
 	initial_scout.global_position = _get_wave_spawn_position()
@@ -273,17 +274,13 @@ func acquire_xp_orb() -> XpOrb:
 
 
 func _process(delta: float) -> void:
-	$Hud/Fps.text = "FPS %d" % Engine.get_frames_per_second()
+	$Hud/HudScale/Fps.text = "FPS %d" % Engine.get_frames_per_second()
 	_update_camera_shake(delta)
 	if manual_paused or upgrade_open or mech_destroyed or victory_open:
 		_position_camera()
 		return
 
 	var movement := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	movement += Vector2(
-		float(touch_direction["right"]) - float(touch_direction["left"]),
-		float(touch_direction["down"]) - float(touch_direction["up"])
-	)
 
 	if movement.length() > 1.0:
 		movement = movement.normalized()
@@ -376,10 +373,6 @@ func _get_mech_direction_frame(direction: Vector2) -> int:
 	return 7 if direction.y > 0.0 else 5
 
 
-func _set_touch_direction(direction: String, pressed: bool) -> void:
-	touch_direction[direction] = pressed
-
-
 func _get_nearest_enemy() -> AlienScout:
 	if is_instance_valid(nearest_target):
 		return nearest_target
@@ -460,7 +453,7 @@ func _update_enemy_heat_visual(enemy: AlienScout) -> void:
 
 
 func _on_scout_health_changed(current_health: int, maximum_health: int) -> void:
-	$Hud/EnemyStatus.text = "РАЗВЕДЧИК: %d / %d HP" % [current_health, maximum_health]
+	$Hud/HudScale/EnemyStatus.text = "РАЗВЕДЧИК: %d / %d HP" % [current_health, maximum_health]
 
 
 func _on_scout_died(dead_scout: AlienScout) -> void:
@@ -472,7 +465,7 @@ func _on_scout_died(dead_scout: AlienScout) -> void:
 		if wave_number == 6:
 			_show_victory(planet_number)
 			return
-	$Hud/EnemyStatus.text = "ОРБ ОПЫТА СБРОШЕН"
+	$Hud/HudScale/EnemyStatus.text = "ОРБ ОПЫТА СБРОШЕН"
 
 
 func _connect_scout(new_scout: AlienScout) -> void:
@@ -485,7 +478,7 @@ func _spawn_scout() -> void:
 	add_child(new_scout)
 	new_scout.global_position = _get_wave_spawn_position()
 	_connect_scout(new_scout)
-	$Hud/EnemyStatus.text = "СИГНАЛ: РАЗВЕДЧИК ОБНАРУЖЕН"
+	$Hud/HudScale/EnemyStatus.text = "СИГНАЛ: РАЗВЕДЧИК ОБНАРУЖЕН"
 
 
 func _spawn_brute() -> void:
@@ -493,7 +486,7 @@ func _spawn_brute() -> void:
 	add_child(new_brute)
 	new_brute.global_position = _get_wave_spawn_position()
 	_connect_scout(new_brute)
-	$Hud/EnemyStatus.text = "СИГНАЛ: БРОНИРОВАННЫЙ ПРИШЕЛЕЦ"
+	$Hud/HudScale/EnemyStatus.text = "СИГНАЛ: БРОНИРОВАННЫЙ ПРИШЕЛЕЦ"
 
 
 func _spawn_bomber() -> void:
@@ -501,7 +494,7 @@ func _spawn_bomber() -> void:
 	add_child(bomber)
 	bomber.global_position = _get_wave_spawn_position()
 	_connect_scout(bomber)
-	$Hud/EnemyStatus.text = "СИГНАЛ: КАМИКАДЗЕ"
+	$Hud/HudScale/EnemyStatus.text = "СИГНАЛ: КАМИКАДЗЕ"
 
 func _spawn_turret() -> void:
 	var turret := TURRET_SCENE.instantiate() as AlienTurret
@@ -536,7 +529,7 @@ func _spawn_elite() -> void:
 	add_child(new_elite)
 	new_elite.global_position = _get_wave_spawn_position()
 	_connect_scout(new_elite)
-	$Hud/EnemyStatus.text = "СИГНАЛ: ЭЛИТНЫЙ РАКЕТНИК"
+	$Hud/HudScale/EnemyStatus.text = "СИГНАЛ: ЭЛИТНЫЙ РАКЕТНИК"
 
 
 func _spawn_boss() -> void:
@@ -546,7 +539,7 @@ func _spawn_boss() -> void:
 	add_child(boss)
 	boss.global_position = _get_wave_spawn_position()
 	_connect_scout(boss)
-	$Hud/EnemyStatus.text = "БОСС: ОСАДНЫЙ ХОДОК — ФАЗА 1"
+	$Hud/HudScale/EnemyStatus.text = "БОСС: ОСАДНЫЙ ХОДОК — ФАЗА 1"
 
 
 func _debug_spawn_scout() -> void:
@@ -607,7 +600,7 @@ func _spawn_health_pack() -> void:
 
 func _collect_health_pack(heal_fraction: float) -> void:
 	mech_health = minf(mech_max_health, mech_health + mech_max_health * heal_fraction)
-	$Hud/EnemyStatus.text = "АПТЕЧКА: +25% HP"
+	$Hud/HudScale/EnemyStatus.text = "АПТЕЧКА: +25% HP"
 	spawn_combat_effect(mech_position, CombatEffect.Type.REPAIR)
 	spawn_combat_popup(mech_position, "+25% HP", Color("78f7ad"))
 	$AudioFeedback.play_sound("heal")
@@ -638,12 +631,12 @@ func _spawn_wave_powerup_if_needed() -> void:
 func _collect_powerup(powerup_type: int) -> void:
 	if powerup_type == Powerup.Type.SPEED:
 		speed_boost_time_left = 12.0
-		$Hud/EnemyStatus.text = "УСКОРЕНИЕ: +50% СКОРОСТИ"
+		$Hud/HudScale/EnemyStatus.text = "УСКОРЕНИЕ: +50% СКОРОСТИ"
 		spawn_combat_effect(mech_position, CombatEffect.Type.SPEED_BOOST)
 		spawn_combat_popup(mech_position, "СКОРОСТЬ +50%", Color("61d7ff"))
 	else:
 		fire_rate_boost_time_left = 12.0
-		$Hud/EnemyStatus.text = "ПЕРЕГРУЗКА: +45% СКОРОСТРЕЛЬНОСТИ"
+		$Hud/HudScale/EnemyStatus.text = "ПЕРЕГРУЗКА: +45% СКОРОСТРЕЛЬНОСТИ"
 		spawn_combat_effect(mech_position, CombatEffect.Type.FIRE_RATE_BOOST)
 		spawn_combat_popup(mech_position, "ТЕМП +45%", Color("ffb45a"))
 	$AudioFeedback.play_sound("boost")
@@ -825,7 +818,7 @@ func _get_wave_limits() -> Dictionary:
 		small_spawn_time_left = minf(small_spawn_time_left, 0.2)
 		medium_spawn_time_left = minf(medium_spawn_time_left, 0.4)
 		large_spawn_time_left = minf(large_spawn_time_left, 0.5)
-		$Hud/EnemyStatus.text = "ВОЛНА %d — СТАДИЯ %d" % [wave_number, stage]
+		$Hud/HudScale/EnemyStatus.text = "ВОЛНА %d — СТАДИЯ %d" % [wave_number, stage]
 
 	if wave_number == 1:
 		if stage == 1:
@@ -854,10 +847,9 @@ func _get_wave_limits() -> Dictionary:
 
 
 func _update_wave_hud() -> void:
-	var second_stage_starts_at := 25.0 if wave_number == 1 else 30.0
-	var stage := 2 if wave_elapsed >= second_stage_starts_at else 1
-	$Hud/Wave.text = "ЗОНА %d  •  ВОЛНА %d/%d" % [planet_number, wave_number, WAVES_PER_PLANET]
-	$Hud/WaveTimer.text = "СТАДИЯ %d  •  %d СЕК" % [stage, ceili(WAVE_DURATION - wave_elapsed)]
+	$Hud/HudScale/Zone.text = "ЗОНА %d" % planet_number
+	$Hud/HudScale/Wave.text = "WAVE %d" % wave_number
+	$Hud/HudScale/WaveTimer.text = "TIME %dс" % ceili(WAVE_DURATION - wave_elapsed)
 
 
 func _collect_experience(amount: int) -> void:
@@ -874,10 +866,10 @@ func _collect_experience(amount: int) -> void:
 
 
 func _update_experience_label() -> void:
-	$Hud/Level.text = "LV %d" % level
-	$Hud/ExperienceBar.max_value = experience_to_next_level
-	$Hud/ExperienceBar.value = experience
-	$Hud/ExperienceValue.text = "%d/%d" % [experience, experience_to_next_level]
+	$Hud/HudScale/Level.text = "LV %d" % level
+	$Hud/HudScale/ExperienceBar.max_value = experience_to_next_level
+	$Hud/HudScale/ExperienceBar.value = experience
+	$Hud/HudScale/ExperienceValue.text = "XP %d/%d" % [experience, experience_to_next_level]
 
 
 func _open_upgrade_choice() -> void:
@@ -907,11 +899,11 @@ func _open_upgrade_choice() -> void:
 	else:
 		var first_weapon := _get_autocannon_upgrade() if autocannon.level < 7 else _get_weapon_upgrade()
 		available_upgrades = [first_weapon, _get_weapon_upgrade(false), _get_character_upgrade(), _get_character_upgrade()]
-	$Hud/UpgradePanel.visible = true
-	$Hud/UpgradePanel/OptionA.text = available_upgrades[0].title
-	$Hud/UpgradePanel/OptionB.text = available_upgrades[1].title
-	$Hud/UpgradePanel/OptionC.text = available_upgrades[2].title
-	$Hud/UpgradePanel/OptionD.text = available_upgrades[3].title
+	$Hud/HudScale/UpgradePanel.visible = true
+	$Hud/HudScale/UpgradePanel/OptionA.text = available_upgrades[0].title
+	$Hud/HudScale/UpgradePanel/OptionB.text = available_upgrades[1].title
+	$Hud/HudScale/UpgradePanel/OptionC.text = available_upgrades[2].title
+	$Hud/HudScale/UpgradePanel/OptionD.text = available_upgrades[3].title
 
 
 func _get_weapon_upgrade(include_autocannon: bool = true) -> Dictionary:
@@ -962,40 +954,40 @@ func _choose_upgrade(index: int) -> void:
 	match choice.kind:
 		"autocannon_step":
 			if autocannon.apply_upgrade("fan"):
-				$Hud/EnemyStatus.text = "ПЛАЗМОТРОН ПРАЙМ" if autocannon.prime else "АВТОПУШКА УР. %d" % autocannon.level
+				$Hud/HudScale/EnemyStatus.text = "ПЛАЗМОТРОН ПРАЙМ" if autocannon.prime else "АВТОПУШКА УР. %d" % autocannon.level
 		"heavy_autocannon_step":
 			if autocannon.apply_upgrade("heavy"):
-				$Hud/EnemyStatus.text = "DESERT EAGLE" if autocannon.level == 7 else "ТЯЖЁЛАЯ ПУШКА УР. %d" % autocannon.level
+				$Hud/HudScale/EnemyStatus.text = "DESERT EAGLE" if autocannon.level == 7 else "ТЯЖЁЛАЯ ПУШКА УР. %d" % autocannon.level
 		"unlock_missile":
 			hunter_launcher.unlock()
-			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ОХОТНИЧЬИ РАКЕТЫ"
+			$Hud/HudScale/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ОХОТНИЧЬИ РАКЕТЫ"
 		"missile_branch_swarm":
 			if hunter_launcher.choose_branch("swarm"):
-				$Hud/EnemyStatus.text = "РАКЕТНЫЙ РОЙ УР. 2"
+				$Hud/HudScale/EnemyStatus.text = "РАКЕТНЫЙ РОЙ УР. 2"
 		"missile_branch_siege":
 			if hunter_launcher.choose_branch("siege"):
-				$Hud/EnemyStatus.text = "ОСАДНАЯ РАКЕТА УР. 2"
+				$Hud/HudScale/EnemyStatus.text = "ОСАДНАЯ РАКЕТА УР. 2"
 		"missile_step":
 			if hunter_launcher.upgrade():
 				if hunter_launcher.level == 7:
-					$Hud/EnemyStatus.text = "ЖЁЛТАЯ БУРЯ" if hunter_launcher.branch == "swarm" else "ТРОЙНОЙ УДАР"
+					$Hud/HudScale/EnemyStatus.text = "ЖЁЛТАЯ БУРЯ" if hunter_launcher.branch == "swarm" else "ТРОЙНОЙ УДАР"
 				else:
-					$Hud/EnemyStatus.text = "РАКЕТЫ УР. %d" % hunter_launcher.level
+					$Hud/HudScale/EnemyStatus.text = "РАКЕТЫ УР. %d" % hunter_launcher.level
 		"unlock_laser":
 			laser.unlock()
-			$Hud/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ЛАЗЕР"
+			$Hud/HudScale/EnemyStatus.text = "ОРУЖИЕ ПОЛУЧЕНО: ЛАЗЕР"
 		"laser_branch_burn":
 			if laser.choose_branch("burn"):
-				$Hud/EnemyStatus.text = "ПРОЖИГАЮЩИЙ ЛУЧ УР. 2"
+				$Hud/HudScale/EnemyStatus.text = "ПРОЖИГАЮЩИЙ ЛУЧ УР. 2"
 		"laser_branch_pulse":
 			if laser.choose_branch("pulse"):
-				$Hud/EnemyStatus.text = "ИМПУЛЬСНЫЙ ЛУЧ УР. 2"
+				$Hud/HudScale/EnemyStatus.text = "ИМПУЛЬСНЫЙ ЛУЧ УР. 2"
 		"laser_step":
 			if laser.upgrade():
 				if laser.level == 7:
-					$Hud/EnemyStatus.text = "СОЛНЕЧНОЕ ЖАЛО" if laser.branch == "burn" else "СОЛНЕЧНЫЙ ИМПУЛЬС"
+					$Hud/HudScale/EnemyStatus.text = "СОЛНЕЧНОЕ ЖАЛО" if laser.branch == "burn" else "СОЛНЕЧНЫЙ ИМПУЛЬС"
 				else:
-					$Hud/EnemyStatus.text = "ЛАЗЕР УР. %d" % laser.level
+					$Hud/HudScale/EnemyStatus.text = "ЛАЗЕР УР. %d" % laser.level
 		"unlock_shuriken":
 			orbit_weapon.unlock()
 		"orbit_branch_shuriken":
@@ -1019,7 +1011,7 @@ func _choose_upgrade(index: int) -> void:
 		"magnet":
 			_collect_all_xp_orbs()
 	_sync_orbit_weapon()
-	$Hud/UpgradePanel.visible = false
+	$Hud/HudScale/UpgradePanel.visible = false
 	upgrade_open = false
 	get_tree().paused = false
 	_update_health_label()
@@ -1041,7 +1033,7 @@ func _take_damage(amount: float) -> void:
 	if mech_health <= 0.0:
 		mech_destroyed = true
 		get_tree().paused = true
-		$Hud/GameOver.visible = true
+		$Hud/HudScale/GameOver.visible = true
 
 
 func _start_camera_shake(strength: float) -> void:
@@ -1056,6 +1048,7 @@ func _update_camera_shake(delta: float) -> void:
 
 
 func _position_camera() -> void:
+	$Hud/HudScale/Minimap.set_player_position(mech_position)
 	var offset := Vector2.ZERO
 	if camera_shake_time_left > 0.0:
 		var fade := camera_shake_time_left / 0.11
@@ -1087,14 +1080,14 @@ func _show_victory(finished_planet: int) -> void:
 		if total > best_damage:
 			best_weapon = weapon_name
 			best_damage = total
-	$Hud/BattleSummary/BestWeapon.text = "ЛИДЕР: %s — %d УРОНА" % [best_weapon, best_damage]
-	$Hud/BattleSummary/Autocannon.text = "АВТОПУШКА        %d" % int(weapon_damage_totals["АВТОПУШКА"])
-	$Hud/BattleSummary/Missiles.text = "ОХОТНИЧЬИ РАКЕТЫ  %d" % int(weapon_damage_totals["ОХОТНИЧЬИ РАКЕТЫ"])
-	$Hud/BattleSummary/Laser.text = "ЛАЗЕР             %d" % int(weapon_damage_totals["ЛАЗЕР"])
-	$Hud/BattleSummary/Shurikens.text = "НАГРЕВ            %d" % int(weapon_damage_totals["ТЕРМОБАРИЧЕСКИЙ НАГРЕВ"]) if orbit_weapon.branch == "heat" else "СЮРИКЕНЫ          %d" % int(weapon_damage_totals["СЮРИКЕНЫ"])
-	$Hud/BattleSummary/NextZone.text = "ПЕРЕЙТИ В ЗОНУ %d" % next_planet if finished_planet < PLANET_COUNT else "В ГЛАВНОЕ МЕНЮ"
-	$Hud/Victory.visible = true
-	$Hud/EnemyStatus.text = "ЗОНА %d ПРОЙДЕНА" % finished_planet
+	$Hud/HudScale/BattleSummary/BestWeapon.text = "ЛИДЕР: %s — %d УРОНА" % [best_weapon, best_damage]
+	$Hud/HudScale/BattleSummary/Autocannon.text = "АВТОПУШКА        %d" % int(weapon_damage_totals["АВТОПУШКА"])
+	$Hud/HudScale/BattleSummary/Missiles.text = "ОХОТНИЧЬИ РАКЕТЫ  %d" % int(weapon_damage_totals["ОХОТНИЧЬИ РАКЕТЫ"])
+	$Hud/HudScale/BattleSummary/Laser.text = "ЛАЗЕР             %d" % int(weapon_damage_totals["ЛАЗЕР"])
+	$Hud/HudScale/BattleSummary/Shurikens.text = "НАГРЕВ            %d" % int(weapon_damage_totals["ТЕРМОБАРИЧЕСКИЙ НАГРЕВ"]) if orbit_weapon.branch == "heat" else "СЮРИКЕНЫ          %d" % int(weapon_damage_totals["СЮРИКЕНЫ"])
+	$Hud/HudScale/BattleSummary/NextZone.text = "ПЕРЕЙТИ В ЗОНУ %d" % next_planet if finished_planet < PLANET_COUNT else "В ГЛАВНОЕ МЕНЮ"
+	$Hud/HudScale/Victory.visible = true
+	$Hud/HudScale/EnemyStatus.text = "ЗОНА %d ПРОЙДЕНА" % finished_planet
 	get_tree().paused = true
 
 
@@ -1108,20 +1101,20 @@ func _continue_after_victory() -> void:
 
 
 func _show_battle_summary() -> void:
-	$Hud/Victory.visible = false
-	$Hud/BattleSummary.visible = true
+	$Hud/HudScale/Victory.visible = false
+	$Hud/HudScale/BattleSummary.visible = true
 
 
 func _hide_battle_summary() -> void:
-	$Hud/BattleSummary.visible = false
-	$Hud/Victory.visible = true
+	$Hud/HudScale/BattleSummary.visible = false
+	$Hud/HudScale/Victory.visible = true
 
 
 func _toggle_pause() -> void:
 	manual_paused = not manual_paused
 	if manual_paused:
 		_hide_pause_options()
-	$Hud/PausePanel.visible = manual_paused
+	$Hud/HudScale/PausePanel.visible = manual_paused
 	get_tree().paused = manual_paused
 
 
@@ -1132,7 +1125,7 @@ func _resume_game() -> void:
 
 
 func _show_pause_options() -> void:
-	var pause_panel := $Hud/PausePanel
+	var pause_panel := $Hud/HudScale/PausePanel
 	pause_panel.get_node("Title").visible = false
 	pause_panel.get_node("Hint").visible = false
 	pause_panel.get_node("Resume").visible = false
@@ -1149,9 +1142,9 @@ func _show_pause_options() -> void:
 
 
 func _hide_pause_options() -> void:
-	if not has_node("Hud/PausePanel/OptionsPanel"):
+	if not has_node("Hud/HudScale/PausePanel/OptionsPanel"):
 		return
-	var pause_panel := $Hud/PausePanel
+	var pause_panel := $Hud/HudScale/PausePanel
 	pause_panel.get_node("OptionsPanel").visible = false
 	for node_name in ["Title", "Hint", "Resume", "Options", "Menu"]:
 		pause_panel.get_node(node_name).visible = true
@@ -1161,7 +1154,7 @@ func _set_pause_volume(value: float) -> void:
 	var settings := _get_settings()
 	if settings != null:
 		settings.call("set_master_volume", value / 100.0)
-	$Hud/PausePanel/OptionsPanel/VolumeValue.text = "%d%%" % roundi(value)
+	$Hud/HudScale/PausePanel/OptionsPanel/VolumeValue.text = "%d%%" % roundi(value)
 
 
 func _set_pause_fullscreen(enabled: bool) -> void:
@@ -1183,10 +1176,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _update_health_label() -> void:
-	$Hud/HealthBar.max_value = mech_max_health
-	$Hud/HealthBar.value = mech_health
-	$Hud/HealthValue.text = "%d/%d" % [ceili(mech_health), ceili(mech_max_health)]
-	$Hud/ShieldValue.text = "ЩИТ %d/%d" % [ceili(shield_health), ceili(shield_max)]
+	$Hud/HudScale/HealthBar.max_value = mech_max_health
+	$Hud/HudScale/HealthBar.value = mech_health
+	$Hud/HudScale/HealthValue.text = "HP %d" % ceili(mech_health)
+	$Hud/HudScale/ShieldValue.text = "ЩИТ %d/%d" % [ceili(shield_health), ceili(shield_max)]
 
 
 func _update_upgrade_list() -> void:
@@ -1199,17 +1192,13 @@ func _update_upgrade_list() -> void:
 		weapon_line += " | %s %d" % [laser_name, laser.level]
 	if shuriken_unlocked:
 		weapon_line += " | %s %d" % ["НАГРЕВ" if orbit_weapon.branch == "heat" else "СЮРИКЕНЫ", shuriken_level]
-	var mech_line := "БРОНЯ %d%% | ЩИТ %d" % [roundi(armor_reduction * 100.0), ceili(shield_max)]
+	var mech_line := "БР%d%% • Щ%d" % [roundi(armor_reduction * 100.0), ceili(shield_max)]
 	if repair_per_second > 0.0:
-		mech_line += " | РЕМОНТ %d" % roundi(repair_per_second)
-	$Hud/UpgradeList.text = weapon_line + "\n" + mech_line
+		mech_line += " • РЕМ%d" % roundi(repair_per_second)
+	$Hud/HudScale/UpgradeList.text = weapon_line + " • " + mech_line
 
 
 func _draw() -> void:
-	# A subtle tint over the hand-painted terrain. Scenery lives in the background
-	# texture so the playable area does not look like a debug grid.
-	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(0.16, 0.07, 0.03, 0.18))
-
 	if laser.branch == "pulse" and laser.beam_time_left > 0.0:
 		var pulse_width := laser.current_stats().beam_width
 		var pulse_direction := laser.beam_end - laser.beam_start

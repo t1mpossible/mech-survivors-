@@ -1,0 +1,12 @@
+Generation: built-in image_gen, 2026-10-01.
+References: desert_planet_background.png (previous terrain style), mech_v3_directions.png (hero rendering style only).
+Final asset: desert_planet_terrain_v2.png, 1586 x 992.
+
+Use case: stylized-concept.
+Asset type: production-ready 2D top-down game terrain background, single opaque landscape bitmap, ideally 2560x1600, 16:10 landscape.
+Primary request: create a much more polished desert planet battlefield for Mechfall, a survivor game with small tracked mechs and alien enemies.
+Input image 1 is the previous terrain ONLY as art-world and palette reference; replace its layout completely. Input image 2 is the tracked hero ONLY as rendering-style reference; DO NOT include the mech or any characters in the terrain.
+Camera: orthographic directly overhead, flat playable ground, no horizon, no sky, no perspective vanishing point. Hand-painted stylized sci-fi game environment, crisp intentional forms with nuanced material texture, matching the hero's painted graphic art but much lower visual contrast.
+Composition: a spacious interconnected desert expanse, 80 percent comfortably empty traversable ground. Broad sweeping pale ochre sand drifts, softly wind-combed sand, low rust-colored weathered sandstone scars flush with the ground, occasional subtle dry cracked earth transitions, a few small shallow impact depressions, very sparse half-buried dull metal fragments. Organic asymmetrical arrangement, no repeating identical features. Calm and relatively empty center; mild interest distributed across the inner area; larger sandstone formations confined to outermost 12 percent of image. No central landmark or arena circle. Outermost edges continue into sand, not a frame or black border.
+Palette: restrained dusty warm ochre, muted terracotta, sun-bleached sand, soft cool taupe shadows. Less saturated orange and more natural tonal variety than old terrain. Consistent soft upper-left sunlight. Keep shadows short. Surface details must be subdued enough that bright yellow XP, red enemy missiles and a blue-grey mech stand out in play.
+Constraints: no characters, no vehicles, no enemies, no guns, no fire, no pickups, no text, no HUD, no grid, no huge cliffs or deep pits within the playable center, no vegetation, no glow, no fog overlay, no vignette. This is the actual game ground artwork, not an illustration of a game screen. High quality polished large-scale painting, not photorealistic or noisy pixel grain.

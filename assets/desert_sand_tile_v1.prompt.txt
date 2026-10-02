@@ -1,0 +1,11 @@
+Built-in image_gen, 2026-10-01. Used as a repeating base layer for the desert map.
+
+Use case: stylized-concept
+Asset type: seamless tileable ground texture for a 2D top-down survivor game.
+Primary request: an opaque 1:1 desert sand ground tile, to repeat across a 1600×900 gameplay map. The tile should be richly detailed but low-contrast and completely seamless on all four edges.
+Scene/backdrop: flat desert planet surface, strict orthographic top-down view.
+Style/medium: hand-painted stylized sci-fi game environment, matching warm ochre desert and dark blue-grey mech art. No photorealistic camera look.
+Materials/textures: fine wind-combed dusty orange sand, extremely subtle tonal bands, tiny sparse pebbles, occasional hairline dry cracks, faint mineral stains. Each feature must be small enough to repeat naturally.
+Lighting/mood: even soft daylight, no directional cast shadows, no vignette.
+Color palette: muted golden ochre, sandy tan, subdued warm terracotta, restrained contrast.
+Constraints: genuinely tileable seamless edges; same color and texture continuity across every edge. No rocks larger than a pebble, no cliffs, no dunes, no scrap, no buildings, no characters, no UI, no text, no grid, no landmarks, no focal composition.

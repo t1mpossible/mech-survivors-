@@ -12,9 +12,9 @@ func _run() -> void:
 	await process_frame
 	assert(arena.training_slots.size() == 8)
 	assert(arena.move_speed == 144.0)
-	assert(arena.level_down.size.x <= 16.0 and arena.level_down.size.y <= 9.0)
-	assert(arena.level_up.size.x <= 16.0 and arena.level_up.size.y <= 9.0)
-	assert(arena.dps_bar.size.y <= 4.0)
+	assert(arena.level_down.size == Vector2(32, 16))
+	assert(arena.level_up.size == Vector2(32, 16))
+	assert(arena.dps_bar.size == Vector2(200, 8))
 	assert(get_nodes_in_group("enemies").size() == 8)
 	assert(not arena.autocannon.enabled and not arena.hunter_launcher.unlocked and not arena.laser.unlocked and not arena.shuriken_unlocked)
 	for slot in arena.training_slots:
@@ -114,10 +114,10 @@ func _run() -> void:
 	await process_frame
 	var menu = load("res://scenes/main_menu.tscn").instantiate()
 	root.add_child(menu)
-	assert(menu.has_node("LevelPanel/TestArena"))
-	assert(not menu.get_node("LevelPanel").visible)
+	assert(menu.has_node("MenuScale/LevelPanel/TestArena"))
+	assert(not menu.get_node("MenuScale/LevelPanel").visible)
 	menu._show_levels()
-	assert(menu.get_node("LevelPanel/TestArena").is_visible_in_tree())
+	assert(menu.get_node("MenuScale/LevelPanel/TestArena").is_visible_in_tree())
 	menu.queue_free()
 	await process_frame
 	print("PASS: arena targets, two-second respawns, all weapons/levels, pickups, menu and normal-game isolation")
