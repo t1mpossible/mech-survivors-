@@ -39,6 +39,7 @@ jobs:
       - name: Export browser version
         shell: bash
         run: |
+          mkdir -p export/web
           "$HOME/godot/Godot_v4.7.1-stable_linux.x86_64" --headless --path . --export-release Web export/web/index.html
 
       - name: Prepare GitHub Pages
