@@ -33,6 +33,8 @@ jobs:
           curl -L --retry 3 -o templates.tpz "${GODOT_RELEASE}/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
           mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           unzip -q templates.tpz -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mv "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/templates/"* "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+          rmdir "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/templates"
 
       - name: Export browser version
         shell: bash
