@@ -341,6 +341,24 @@ theme_override_colors/font_color = Color(0.63, 0.82, 0.94, 0.82)
 theme_override_font_sizes/font_size = 7
 text = "FPS --"
 
+[node name="PauseButton" type="Button" parent="Hud/HudScale"]
+process_mode = 3
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -48.0
+offset_top = 80.0
+offset_right = -12.0
+offset_bottom = 116.0
+focus_mode = 0
+tooltip_text = "Пауза / продолжить"
+theme_override_colors/font_color = Color(0.72, 0.91, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
+text = "II"
+
 [node name="Wave1" type="Button" parent="Hud/HudScale" unique_id=111241507]
 layout_mode = 1
 anchor_left = 0.5
@@ -1106,6 +1124,7 @@ text = "Назад"
 [connection signal="pressed" from="Hud/HudScale/BattleSummary/Back" to="." method="_hide_battle_summary"]
 [connection signal="pressed" from="Hud/HudScale/BattleSummary/NextZone" to="." method="_continue_after_victory"]
 [connection signal="pressed" from="Hud/HudScale/PausePanel/Resume" to="." method="_resume_game"]
+[connection signal="pressed" from="Hud/HudScale/PauseButton" to="." method="_toggle_pause"]
 [connection signal="pressed" from="Hud/HudScale/PausePanel/Menu" to="." method="_return_to_menu"]
 [connection signal="pressed" from="Hud/HudScale/PausePanel/Options" to="." method="_show_pause_options"]
 [connection signal="value_changed" from="Hud/HudScale/PausePanel/OptionsPanel/Volume" to="." method="_set_pause_volume"]

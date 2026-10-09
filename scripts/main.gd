@@ -1207,9 +1207,11 @@ func _hide_battle_summary() -> void:
 
 
 func _toggle_pause() -> void:
+	if upgrade_open or mech_destroyed or victory_open:
+		return
+	virtual_joystick.call("_release_touch")
 	manual_paused = not manual_paused
-	if manual_paused:
-		_hide_pause_options()
+	_hide_pause_options()
 	$Hud/HudScale/PausePanel.visible = manual_paused
 	get_tree().paused = manual_paused
 

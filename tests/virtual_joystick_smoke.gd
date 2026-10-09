@@ -100,6 +100,23 @@ func _run() -> void:
 	if "--capture" in OS.get_cmdline_user_args():
 		await RenderingServer.frame_post_draw
 		view.get_texture().get_image().save_png("res://.godot/mobile_stick_preview.png")
+	var pause_button: Button = game.get_node("Hud/HudScale/PauseButton")
+	var button_center := pause_button.get_global_transform_with_canvas() * (pause_button.size * 0.5)
+	for down in [true, false]:
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = down
+		click.position = button_center
+		view.push_input(click, true)
+	_check(paused and game.get("manual_paused"), "HUD pause button must pause battle")
+	_check(not game_stick.visible and not game_stick.call("is_active"), "Pause button must immediately release stick")
+	_check(game.get_node("Hud/HudScale/PausePanel").visible, "Pause menu must open")
+	game.get_node("Hud/HudScale/PausePanel/Resume").emit_signal("pressed")
+	_check(not paused and not game.get("manual_paused"), "Resume must unpause battle")
+	game.call("_open_upgrade_choice")
+	pause_button.emit_signal("pressed")
+	_check(paused and not game.get("manual_paused"), "Pause button must not unpause upgrade selection")
+	paused = false
 	game.queue_free()
 	view.queue_free()
 	await process_frame
