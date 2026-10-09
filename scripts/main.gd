@@ -1,5 +1,7 @@
 extends Node2D
 
+@export_range(1.0, 2.0, 0.05) var mobile_camera_zoom := 1.5
+
 const MAP_SIZE := Vector2(1600, 900)
 const PLASMA_ROUND := preload("res://scenes/plasma_round.tscn")
 const XP_ORB := preload("res://scenes/xp_orb.tscn")
@@ -121,6 +123,8 @@ var xp_sound_time_left := 0.0
 
 
 func _ready() -> void:
+	if virtual_joystick.touch_enabled:
+		camera.zoom = Vector2.ONE * mobile_camera_zoom
 	get_viewport().size_changed.connect(_refresh_camera_layout)
 	$Hud/HudScale/Minimap.configure($DesertBackground/Ground, MAP_SIZE)
 	$Hud/HudScale/Minimap.set_player_position(mech_position)

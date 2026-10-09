@@ -3,6 +3,8 @@ extends Control
 ## every frame. Keep the 640x360 composition and fit it inside mobile safe insets.
 
 @export var reference_size := Vector2(640.0, 360.0)
+@export var mobile_ui_scale := 1.2
+var touch_layout := false
 
 const WEB_SAFE_AREA := """
 (function () {
@@ -26,6 +28,7 @@ const WEB_SAFE_AREA := """
 
 
 func _ready() -> void:
+	touch_layout = preload("res://scripts/virtual_joystick.gd")._is_touch_device()
 	# Resize must also work while the scene tree is paused for upgrades/options.
 	get_viewport().size_changed.connect(_queue_layout)
 	_queue_layout()
@@ -59,9 +62,11 @@ func _apply_layout() -> void:
 func apply_safe_rect(safe_rect: Rect2) -> void:
 	if not safe_rect.has_area():
 		return
-	var fit := minf(1.0, minf(safe_rect.size.x / reference_size.x, safe_rect.size.y / reference_size.y))
-	# Uniform scale only when a cutout consumes part of the minimum design area.
-	# Ordinary 16:9, 16:10 and ultrawide displays use scale=1 and native font rendering.
+	var desired_scale := mobile_ui_scale if touch_layout else 1.0
+	var minimum_size := Vector2(reference_size.x, 300.0) if touch_layout else reference_size
+	# Use spare space on tall/wide phones, while keeping panels and HUD in bounds.
+	var fit := minf(desired_scale, minf(safe_rect.size.x / minimum_size.x, safe_rect.size.y / minimum_size.y))
+	# Desktop retains scale=1 unless safe insets require fitting; mobile may grow.
 	scale = Vector2.ONE * fit
 	var viewport_size := get_viewport_rect().size
 	offset_left = safe_rect.position.x
