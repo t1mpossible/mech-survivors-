@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Godot 2D game projectile sprite
+Primary request: one isolated compact heavy tank shell for a purple alien turret. It should point to the right, with a rounded armored violet-metal body, one bright lavender energy band at its center, and a dark violet rear cap. The shell must look like solid ballistic ammunition, not a rocket: no fins, no exhaust, no flames, no smoke, no trail.
+Scene/backdrop: genuine transparent background alpha
+Style/medium: clean crisp 2D sci-fi game sprite, minimal futuristic Mechfall desert enemy style, readable at very small size
+Composition/framing: centered horizontal shell, large enough in its canvas to preserve edge detail when scaled down, facing right
+Color palette: purple, violet, dark indigo, subtle pale lavender highlight
+Constraints: no text, no watermark, no UI, no ground, no other objects

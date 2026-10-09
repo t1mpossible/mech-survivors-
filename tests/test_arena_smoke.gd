@@ -110,6 +110,14 @@ func _run() -> void:
 	normal.set_process(false)
 	assert(normal.autocannon.enabled)
 	assert(normal.move_speed == 72.0)
+	normal.planet_number = 1
+	normal._update_wave_selector()
+	assert(normal.get_node("Hud/HudScale/Wave1").visible)
+	normal.get_node("Hud/HudScale/Wave5").emit_signal("pressed")
+	assert(normal.wave_number == 5 and normal.wave_elapsed == 0.0)
+	normal.planet_number = 2
+	normal._update_wave_selector()
+	assert(not normal.get_node("Hud/HudScale/Wave1").visible)
 	normal.queue_free()
 	await process_frame
 	var menu = load("res://scenes/main_menu.tscn").instantiate()

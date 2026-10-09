@@ -25,7 +25,7 @@ func _process(delta: float) -> void:
 			mine.homing_time = 2.5
 			mine.fall_time = 2.5
 		shot = 3.5
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, death_effect_type: int = CombatEffect.Type.ENEMY_DISSOLVE) -> void:
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
 	if health == 0:
@@ -36,6 +36,7 @@ func take_damage(amount: int) -> void:
 				get_parent().add_child(child)
 				child.global_position = global_position + Vector2(side, 0)
 				get_parent()._connect_scout(child)
+		_spawn_death_effect(death_effect_type)
 		died.emit()
 		queue_free()
 

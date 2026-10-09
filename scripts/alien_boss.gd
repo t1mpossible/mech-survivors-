@@ -36,7 +36,7 @@ func _process(delta: float) -> void:
 			mine_time_left = 2.5 if phase == 2 else 5.0
 
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, death_effect_type: int = CombatEffect.Type.ENEMY_DISSOLVE) -> void:
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
 	queue_redraw()
@@ -49,6 +49,7 @@ func take_damage(amount: int) -> void:
 			rocket_time_left = 0.8
 			mine_time_left = 1.2
 		else:
+			_spawn_death_effect(death_effect_type)
 			died.emit()
 			queue_free()
 

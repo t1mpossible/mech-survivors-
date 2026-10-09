@@ -1,8 +1,26 @@
 extends Control
 
+const MENU_MUSIC_VOLUME_DB := -9.0
+
+@onready var menu_music: AudioStreamPlayer = $MenuMusic
+
 
 func _ready() -> void:
 	_refresh_levels()
+	_start_menu_music()
+
+
+func _start_menu_music() -> void:
+	var menu_theme := menu_music.stream as AudioStreamWAV
+	if menu_theme == null:
+		return
+	menu_theme = menu_theme.duplicate() as AudioStreamWAV
+	menu_theme.loop_begin = 0
+	menu_theme.loop_end = roundi(menu_theme.get_length() * menu_theme.mix_rate)
+	menu_theme.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	menu_music.stream = menu_theme
+	menu_music.volume_db = MENU_MUSIC_VOLUME_DB
+	menu_music.play()
 
 
 func _new_game() -> void:
@@ -30,7 +48,7 @@ func _show_options() -> void:
 	var settings := _get_settings()
 	if settings != null:
 		$MenuScale/OptionsPanel/Volume.value = float(settings.get("master_volume")) * 100.0
-		$MenuScale/OptionsPanel/Fullscreen.button_pressed = bool(settings.get("fullscreen"))
+		$MenuScale/OptionsPanel/Fullscreen.set_pressed_no_signal(DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN])
 
 
 func _hide_options() -> void:

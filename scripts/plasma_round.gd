@@ -113,7 +113,8 @@ func _advance_round(delta: float) -> void:
 		_spawn_impact()
 		var game := get_parent().get_parent()
 		if game != null and game.has_method("_deal_weapon_damage"):
-			game._deal_weapon_damage(hit_enemy, damage, "АВТОПУШКА")
+			var final_autocannon_shot := prime_round or (heavy_round and damage == 30)
+			game._deal_weapon_damage(hit_enemy, damage, "АВТОПУШКА", final_autocannon_shot)
 		else:
 			hit_enemy.take_damage(damage)
 		penetrated_enemy_ids.append(hit_enemy.get_instance_id())

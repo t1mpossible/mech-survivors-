@@ -1,0 +1,1 @@
+Four compact weapon-upgrade UI emblems in one horizontal sprite sheet: plasma cannon, three-missile salvo, blue laser emitter, orbiting shurikens. Match the requested icon language with icy-white/cyan outlines, blue luminous inner panels, cyan aura and small orange details. Transparent background, no text; each icon in an equal cell.

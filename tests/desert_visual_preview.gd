@@ -23,6 +23,7 @@ func _run() -> void:
 	await _capture("desert_battle_preview")
 	game.mech_position = Vector2(35, 35)
 	game.mech_sprite.position = game.mech_position
+	game.mech_shadow.position = game.mech_position + Vector2(0, 13)
 	game._position_camera()
 	await _capture("desert_edge_preview")
 	game.queue_free()
@@ -32,6 +33,7 @@ func _run() -> void:
 	arena.set_process(false)
 	arena.mech_position = Vector2(800, 440)
 	arena.mech_sprite.position = arena.mech_position
+	arena.mech_shadow.position = arena.mech_position + Vector2(0, 13)
 	arena._position_camera()
 	await _capture("desert_arena_preview")
 	print("Desert battle, edge and arena previews captured.")

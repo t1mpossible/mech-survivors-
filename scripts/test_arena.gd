@@ -266,13 +266,13 @@ func _equip_test_weapon(key: String) -> void:
 	queue_redraw()
 
 
-func _deal_weapon_damage(enemy: AlienScout, amount: int, weapon_name: String) -> void:
+func _deal_weapon_damage(enemy: AlienScout, amount: int, weapon_name: String, evolved_shot: bool = false) -> void:
 	if is_instance_valid(enemy) and enemy.health > 0:
 		var actual_damage := mini(amount, enemy.health)
 		training_damage += actual_damage
 		dps_window_damage += actual_damage
 		dps_hits.append(Vector2(dps_clock, actual_damage))
-	super._deal_weapon_damage(enemy, amount, weapon_name)
+	super._deal_weapon_damage(enemy, amount, weapon_name, evolved_shot)
 	_update_training_dps()
 	_update_upgrade_list()
 

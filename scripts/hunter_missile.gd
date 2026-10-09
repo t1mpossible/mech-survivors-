@@ -209,5 +209,14 @@ func _draw_projectile_frame(column: int, size: Vector2, tint: Color) -> void:
 func _spawn_explosion() -> void:
 	var game := get_parent().get_parent()
 	if game != null and game.has_method("spawn_combat_effect"):
-		var size_multiplier := 1.6 if explosion_radius > 0.0 else 1.0
+		# This only changes the impact animation; the damage radius remains
+		# controlled by explosion_radius in _explode().
+		var size_multiplier := 0.78
+		if missile_style == "swarm":
+			# Small yellow swarm rockets should read as quick, compact impacts.
+			size_multiplier = 0.62
+		elif missile_style == "siege":
+			# Siege rockets get a visibly wider burst. Higher AoE levels look a
+			# little larger too, without changing their damage area.
+			size_multiplier = 1.35 + minf(explosion_radius / 100.0, 0.35)
 		game.spawn_combat_effect(global_position, CombatEffect.Type.ROCKET_EXPLOSION, size_multiplier)

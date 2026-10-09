@@ -16,6 +16,7 @@ const HUNTER_MISSILE := preload("res://scenes/hunter_missile.tscn")
 const COMBAT_EFFECT := preload("res://scenes/combat_effect.tscn")
 const COMBAT_POPUP := preload("res://scenes/combat_popup.tscn")
 const HERO_WEAPON_EFFECTS := preload("res://assets/hero_weapon_effects_v1.png")
+const THERMAL_AURA_TEXTURE := preload("res://assets/thermal_aura_yellow_orange_v1.png")
 const LASER_BURN_FRAMES := [
 	preload("res://assets/laser_burn_frame_1.png"),
 	preload("res://assets/laser_burn_frame_2.png"),
@@ -38,6 +39,8 @@ const MAX_XP_ORBS := 180
 const MAX_COMBAT_EFFECTS := 64
 const MAX_COMBAT_POPUPS := 10
 const TARGET_REFRESH_INTERVAL := 0.15
+const ZONE_MUSIC_VOLUME_DB := -3.0
+const ZONE_MUSIC_UPGRADE_VOLUME_DB := -9.0206
 
 var mech_position := MAP_SIZE / 2.0
 var tread_travel := 0.0
@@ -107,18 +110,36 @@ var xp_sound_time_left := 0.0
 
 @onready var initial_scout: AlienScout = $Scout
 @onready var camera: Camera2D = $Camera2D
+@onready var mech_shadow: Node2D = $MechShadow
 @onready var mech_sprite: Sprite2D = $MechSprite
 @onready var autocannon: Autocannon = $Autocannon
 @onready var hunter_launcher: HunterLauncher = $HunterLauncher
 @onready var laser: LaserWeapon = $LaserWeapon
 @onready var orbit_weapon: OrbitWeapon = $OrbitWeapon
+@onready var zone_music: AudioStreamPlayer = $ZoneMusic
+@onready var virtual_joystick: Control = $Hud/HudScale/VirtualJoystick
 
 
 func _ready() -> void:
+	get_viewport().size_changed.connect(_refresh_camera_layout)
 	$Hud/HudScale/Minimap.configure($DesertBackground/Ground, MAP_SIZE)
 	$Hud/HudScale/Minimap.set_player_position(mech_position)
+	mech_shadow.global_position = mech_position + Vector2(0.0, 13.0)
 	_warm_projectile_pools()
 	planet_number = GameState.selected_planet
+	if planet_number == 1:
+		zone_music.process_mode = Node.PROCESS_MODE_ALWAYS
+		zone_music.volume_db = ZONE_MUSIC_VOLUME_DB
+		var desert_theme := zone_music.stream as AudioStreamWAV
+		if desert_theme != null:
+			desert_theme = desert_theme.duplicate() as AudioStreamWAV
+			# Enabling looping alone can leave the imported loop range at 0..0.
+			desert_theme.loop_begin = 0
+			desert_theme.loop_end = roundi(desert_theme.get_length() * desert_theme.mix_rate)
+			desert_theme.loop_mode = AudioStreamWAV.LOOP_FORWARD
+			zone_music.stream = desert_theme
+			zone_music.play()
+	_update_wave_selector()
 	initial_scout.global_position = _get_wave_spawn_position()
 	_connect_scout(initial_scout)
 	_update_experience_label()
@@ -281,6 +302,8 @@ func _process(delta: float) -> void:
 		return
 
 	var movement := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if bool(virtual_joystick.call("is_active")):
+		movement = virtual_joystick.get("direction") as Vector2
 
 	if movement.length() > 1.0:
 		movement = movement.normalized()
@@ -295,6 +318,7 @@ func _process(delta: float) -> void:
 	tread_travel = fmod(tread_travel + mech_position.distance_to(previous_mech_position) / 8.0, 1000.0)
 	(mech_sprite.material as ShaderMaterial).set_shader_parameter("travel", tread_travel)
 	mech_sprite.global_position = mech_position
+	mech_shadow.global_position = mech_position + Vector2(0.0, 13.0)
 	# A tank chassis stays rigid: one frame is held while it travels smoothly.
 	mech_sprite.scale = Vector2.ONE * 0.112
 	mech_sprite.modulate = Color(1.0, 0.5, 0.5) if mech_hit_flash_time > 0.0 else Color.WHITE
@@ -424,12 +448,20 @@ func _on_laser_damage_requested(enemy: AlienScout, amount: int) -> void:
 	_deal_weapon_damage(enemy, amount, "ЛАЗЕР")
 
 
-func _deal_weapon_damage(enemy: AlienScout, amount: int, weapon_name: String) -> void:
+func _deal_weapon_damage(enemy: AlienScout, amount: int, weapon_name: String, evolved_shot: bool = false) -> void:
 	if not is_instance_valid(enemy) or enemy.health <= 0:
 		return
 	var actual_damage := mini(amount, enemy.health)
 	weapon_damage_totals[weapon_name] = int(weapon_damage_totals.get(weapon_name, 0)) + actual_damage
-	enemy.take_damage(amount)
+	enemy.take_damage(amount, _death_effect_for_weapon(weapon_name, evolved_shot))
+
+
+func _death_effect_for_weapon(weapon_name: String, evolved_shot: bool = false) -> int:
+	# All rockets and final weapon evolutions get the large four-frame explosion.
+	# Regular shots retain the lightweight blue energy fade.
+	var final_orbit_weapon := (weapon_name == "СЮРИКЕНЫ" or weapon_name == "ТЕРМОБАРИЧЕСКИЙ НАГРЕВ") and orbit_weapon.level == 7
+	var final_laser := weapon_name == "ЛАЗЕР" and laser.level == 7
+	return CombatEffect.Type.ENEMY_DEATH if weapon_name == "ОХОТНИЧЬИ РАКЕТЫ" or evolved_shot or final_orbit_weapon or final_laser else CombatEffect.Type.ENEMY_DISSOLVE
 
 
 func _get_shuriken_angles() -> Array[float]:
@@ -559,6 +591,8 @@ func _debug_spawn_boss() -> void:
 
 
 func _debug_set_wave(target_wave: int) -> void:
+	if planet_number != 1:
+		return
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		enemy_node.queue_free()
 	for rocket_node in get_tree().get_nodes_in_group("enemy_rockets"):
@@ -568,7 +602,7 @@ func _debug_set_wave(target_wave: int) -> void:
 	for hazard_node in get_tree().get_nodes_in_group("enemy_hazards"):
 		hazard_node.queue_free()
 	boss = null
-	wave_number = target_wave
+	wave_number = clampi(target_wave, 1, WAVES_PER_PLANET)
 	wave_elapsed = 0.0
 	last_wave_stage = 0
 	small_spawn_time_left = 0.0
@@ -579,6 +613,14 @@ func _debug_set_wave(target_wave: int) -> void:
 	mortar_spawn_time_left = 0.0
 	_prepare_wave_pickups()
 	_update_wave_hud()
+
+
+func _update_wave_selector() -> void:
+	# The compact wave shortcuts are a level-one test aid, not part of later zones.
+	var show_selector := planet_number == 1
+	for target_wave in range(1, WAVES_PER_PLANET + 1):
+		$Hud/HudScale.get_node("Wave%d" % target_wave).visible = show_selector
+	$Hud/HudScale/DebugLevel.visible = show_selector
 
 
 func _debug_level_up() -> void:
@@ -723,6 +765,7 @@ func _update_wave_progress(delta: float) -> void:
 		if wave_number > WAVES_PER_PLANET:
 			wave_number = 1
 			planet_number = mini(planet_number + 1, PLANET_COUNT)
+			_update_wave_selector()
 		last_wave_stage = 0
 		_prepare_wave_pickups()
 	_update_wave_hud()
@@ -875,6 +918,7 @@ func _update_experience_label() -> void:
 func _open_upgrade_choice() -> void:
 	$AudioFeedback.play_sound("level")
 	upgrade_open = true
+	_set_zone_music_upgrade_mix(true)
 	get_tree().paused = true
 	if autocannon.level == 1 and autocannon.branch.is_empty():
 		available_upgrades = [_get_autocannon_upgrade(), _get_heavy_autocannon_upgrade(), _get_character_upgrade(), _get_character_upgrade()]
@@ -904,6 +948,42 @@ func _open_upgrade_choice() -> void:
 	$Hud/HudScale/UpgradePanel/OptionB.text = available_upgrades[1].title
 	$Hud/HudScale/UpgradePanel/OptionC.text = available_upgrades[2].title
 	$Hud/HudScale/UpgradePanel/OptionD.text = available_upgrades[3].title
+	_update_upgrade_icons()
+
+
+func _update_upgrade_icons() -> void:
+	var icons := [
+		$Hud/HudScale/UpgradePanel/IconA,
+		$Hud/HudScale/UpgradePanel/IconB,
+		$Hud/HudScale/UpgradePanel/IconC,
+		$Hud/HudScale/UpgradePanel/IconD
+	]
+	for index in mini(icons.size(), available_upgrades.size()):
+		icons[index].icon_index = _get_upgrade_icon_index(available_upgrades[index].kind)
+
+
+func _get_upgrade_icon_index(kind: String) -> int:
+	if kind == "autocannon_step" or kind == "heavy_autocannon_step":
+		return UpgradeIcon.PLASMA_CANNON_ICON
+	if kind == "unlock_missile" or kind == "missile_branch_swarm" or kind == "missile_branch_siege" or kind == "missile_step":
+		return UpgradeIcon.MISSILE_ICON
+	if kind == "unlock_laser" or kind == "laser_branch_burn" or kind == "laser_branch_pulse" or kind == "laser_step":
+		return UpgradeIcon.LASER_ICON
+	if kind == "unlock_shuriken" or kind == "orbit_branch_shuriken" or kind == "orbit_branch_heat" or kind == "orbit_step":
+		return UpgradeIcon.SHURIKEN_ICON
+	if kind == "max_health":
+		return UpgradeIcon.HEALTH_ICON
+	if kind == "repair":
+		return UpgradeIcon.REPAIR_ICON
+	if kind == "speed":
+		return UpgradeIcon.SPEED_ICON
+	if kind == "armor":
+		return UpgradeIcon.ARMOR_ICON
+	if kind == "shield":
+		return UpgradeIcon.SHIELD_ICON
+	if kind == "magnet":
+		return UpgradeIcon.MAGNET_ICON
+	return UpgradeIcon.HEALTH_ICON
 
 
 func _get_weapon_upgrade(include_autocannon: bool = true) -> Dictionary:
@@ -1013,9 +1093,15 @@ func _choose_upgrade(index: int) -> void:
 	_sync_orbit_weapon()
 	$Hud/HudScale/UpgradePanel.visible = false
 	upgrade_open = false
+	_set_zone_music_upgrade_mix(false)
 	get_tree().paused = false
 	_update_health_label()
 	_update_upgrade_list()
+
+
+func _set_zone_music_upgrade_mix(upgrade_menu_visible: bool) -> void:
+	if planet_number == 1:
+		zone_music.volume_db = ZONE_MUSIC_UPGRADE_VOLUME_DB if upgrade_menu_visible else ZONE_MUSIC_VOLUME_DB
 
 
 func _take_damage(amount: float) -> void:
@@ -1054,6 +1140,12 @@ func _position_camera() -> void:
 		var fade := camera_shake_time_left / 0.11
 		offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * camera_shake_strength * fade
 	camera.global_position = mech_position + offset
+
+
+func _refresh_camera_layout() -> void:
+	# Camera2D normally updates during processing, which stops on the upgrade screen.
+	# Force a fresh viewport transform even when the game is paused/resized.
+	camera.force_update_scroll.call_deferred()
 
 
 func _restart_game() -> void:
@@ -1138,7 +1230,7 @@ func _show_pause_options() -> void:
 		var volume := float(settings.get("master_volume"))
 		options.get_node("Volume").value = volume * 100.0
 		options.get_node("VolumeValue").text = "%d%%" % roundi(volume * 100.0)
-		options.get_node("Fullscreen").button_pressed = bool(settings.get("fullscreen"))
+		options.get_node("Fullscreen").set_pressed_no_signal(DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN])
 
 
 func _hide_pause_options() -> void:
@@ -1246,11 +1338,17 @@ func _draw() -> void:
 func _draw_thermal_aura() -> void:
 	var radius := orbit_weapon.radius()
 	var pulse := 0.5 + 0.5 * sin(weapon_visual_time * 3.5)
-	# Three inexpensive shapes; fire detail is baked into a shared enemy atlas.
-	draw_circle(mech_position, radius, Color(1.0, 0.3, 0.04, 0.045 + pulse * 0.015))
-	draw_arc(mech_position, radius, 0.0, TAU, 64, Color(1.0, 0.53, 0.18, 0.22 + pulse * 0.12), 1.0, true)
-	var expansion := fmod(weapon_visual_time * 0.35, 1.0)
-	draw_arc(mech_position, radius * (0.2 + expansion * 0.75), 0.0, TAU, 48, Color(1.0, 0.42, 0.08, (1.0 - expansion) * 0.12), 1.0, true)
+	# A shared transparent texture stays readable against the desert and rotates
+	# slowly, without adding particles or extra scene nodes.
+	var texture_size := Vector2.ONE * radius * 2.25
+	draw_set_transform(mech_position, weapon_visual_time * 0.18)
+	draw_texture_rect(
+		THERMAL_AURA_TEXTURE,
+		Rect2(-texture_size * 0.5, texture_size),
+		false,
+		Color(1.0, 1.0, 1.0, 0.30 + pulse * 0.06)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0)
 	if orbit_weapon.wave_visual_time > 0.0:
 		var progress := 1.0 - orbit_weapon.wave_visual_time / OrbitWeapon.WAVE_VISUAL_DURATION
 		var wave_size := lerpf(8.0, orbit_weapon.wave_radius, progress)

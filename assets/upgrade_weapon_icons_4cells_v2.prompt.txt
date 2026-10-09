@@ -1,0 +1,1 @@
+Four minimal futuristic weapon-upgrade UI emblems in one horizontal sprite sheet: plasma cannon, three fanned missiles, laser emitter, three orbiting shurikens. Match the body-upgrade emblem style: large clean silhouettes, thick white/cyan outlines, blue energy centers, cyan glow, tiny orange accents, no realistic machinery or detailed texture, transparent background.

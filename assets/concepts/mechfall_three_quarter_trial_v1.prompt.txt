@@ -1,0 +1,6 @@
+Use case: precise-object-edit / stylized-concept
+Asset type: exploratory gameplay comparison still for Mechfall (not a runtime sprite or map)
+Image 1: generated first-pass gameplay concept.
+Image 2: actual 1280x720 Godot gameplay screenshot, terrain-density reference.
+Keep the game's existing desert palette, flat readable playfield, HUD, minimap, tracked mech in the center and alien at comparable gameplay size. Give the mech and alien a subtle three-quarter view with a little more front/side volume and soft contact shadows. Keep the ground quiet: sparse rocks and cracks, fewer pebbles and ridges than the first concept. No perspective grid, horizon, rotated camera or additional elements.
+Generated with built-in image_gen on 2026-10-08. Preview only; not connected to a Godot scene.

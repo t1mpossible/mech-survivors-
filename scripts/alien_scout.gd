@@ -4,8 +4,10 @@ extends Node2D
 const ENEMY_ART := preload("res://assets/enemies_desert_v1.png")
 const ENEMY_ART_MOTION := preload("res://assets/enemies_desert_motion_v1.png")
 const THERMAL_FIRE := preload("res://assets/thermal_fire_3frames_v1.png")
+const SHADOW_TEXTURE := preload("res://assets/ground_shadow_v1.png")
 const THERMAL_FIRE_FRAME_COUNT := 3
 const THERMAL_FIRE_FPS := 7.0
+const SHADOW_SOURCE_REGION := Rect2(88.0, 495.0, 850.0, 260.0)
 # Individually fitted atlas bounds: the generated artwork is not an exact tile grid.
 const ART_REGIONS: Array[Rect2] = [
 	Rect2(0.020, 0.105, 0.208, 0.322),
@@ -65,12 +67,12 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, death_effect_type: int = CombatEffect.Type.ENEMY_DISSOLVE) -> void:
 	health = maxi(health - amount, 0)
 	damage_flash_time = 0.1
 	health_changed.emit(health, max_health)
 	if health == 0:
-		_spawn_death_effect()
+		_spawn_death_effect(death_effect_type)
 		died.emit()
 		queue_free()
 
@@ -90,13 +92,13 @@ func set_thermal_visual(active: bool, animation_time: float) -> void:
 		queue_redraw()
 
 
-func _spawn_death_effect() -> void:
+func _spawn_death_effect(effect_type: int = CombatEffect.Type.ENEMY_DISSOLVE) -> void:
 	var game := get_parent()
 	if game != null and game.has_method("spawn_combat_effect"):
-		game.spawn_combat_effect(global_position, CombatEffect.Type.ENEMY_DEATH, maxf(hit_radius / 14.0, 0.8))
+		game.spawn_combat_effect(global_position, effect_type, maxf(hit_radius / 14.0, 0.8))
 
 
-func _draw_enemy_art(kind: int, width: float, bar_color: Color) -> void:
+func _draw_enemy_art(kind: int, width: float, bar_color: Color, forced_flip: int = -1) -> void:
 	var bounds := ART_REGIONS[kind]
 	var art := ENEMY_ART
 	if movement_animation_active and int(visual_time * 5.0) % 2 == 1:
@@ -105,10 +107,13 @@ func _draw_enemy_art(kind: int, width: float, bar_color: Color) -> void:
 	if kind < 6:
 		width *= 1.2
 	var size := Vector2(width, width * source.size.y / source.size.x)
+	_draw_ground_shadow(Vector2(0.0, size.y * 0.30), size.x * 0.34, maxf(2.6, size.y * 0.085))
 	# The walking mine (kind 3) faces left in the atlas; the other art faces right.
 	# Mirror only the sprite, so the health bar remains readable.
 	var player_is_left := target_position.x < global_position.x
 	var flip_art := not player_is_left if kind == 3 else player_is_left
+	if forced_flip >= 0:
+		flip_art = forced_flip == 1
 	var art_tint := Color(1.0, 0.78, 0.60) if thermal_active else Color.WHITE
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1.0 if flip_art else 1.0, 1.0))
 	if ART_CLIP_BANDS.has(kind):
@@ -127,6 +132,17 @@ func _draw_enemy_art(kind: int, width: float, bar_color: Color) -> void:
 	draw_rect(Rect2(-bar_width * 0.5, bar_y, bar_width, 3.0), Color("160d18"))
 	draw_rect(Rect2(-bar_width * 0.5 + 1.0, bar_y + 1.0,
 		(bar_width - 2.0) * float(health) / float(max_health), 1.0), bar_color)
+
+
+func _draw_ground_shadow(center: Vector2, radius_x: float, radius_y: float, opacity: float = 0.24) -> void:
+	# One shared textured quad per enemy replaces two procedural circle calls.
+	var size := Vector2(radius_x * 2.5, radius_y * 2.7)
+	draw_texture_rect_region(
+		SHADOW_TEXTURE,
+		Rect2(center - size * 0.5, size),
+		SHADOW_SOURCE_REGION,
+		Color(0.16, 0.09, 0.045, opacity * 1.15)
+	)
 
 
 func _draw_thermal_flames(size: Vector2) -> void:

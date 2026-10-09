@@ -2,6 +2,10 @@ class_name EnemyRocket
 extends Node2D
 
 const PROJECTILE_ART := preload("res://assets/projectiles_v1.png")
+const TURRET_SHELL_ART := preload("res://assets/purple_turret_shell_v1.png")
+const TURRET_SHELL_TRAIL := preload("res://assets/purple_turret_shell_trail_3frames_v1.png")
+
+enum ProjectileKind { ROCKET, TURRET_SHELL }
 
 var direction := Vector2.LEFT
 var speed := 48.0
@@ -11,6 +15,7 @@ var lifetime := 4.0
 var homing_time := 0.0
 var active := false
 var visual_time := 0.0
+var projectile_kind := ProjectileKind.ROCKET
 
 signal hit_player(amount: float)
 
@@ -22,7 +27,7 @@ func _ready() -> void:
 	queue_redraw()
 
 
-func activate(start_position: Vector2, new_direction: Vector2, new_speed: float, new_damage: float, new_homing_time: float = 0.0, new_lifetime: float = 4.0, new_scale: Vector2 = Vector2.ONE) -> void:
+func activate(start_position: Vector2, new_direction: Vector2, new_speed: float, new_damage: float, new_homing_time: float = 0.0, new_lifetime: float = 4.0, new_scale: Vector2 = Vector2.ONE, new_projectile_kind: int = ProjectileKind.ROCKET) -> void:
 	global_position = start_position
 	direction = new_direction
 	speed = new_speed
@@ -30,6 +35,7 @@ func activate(start_position: Vector2, new_direction: Vector2, new_speed: float,
 	homing_time = new_homing_time
 	lifetime = new_lifetime
 	scale = new_scale
+	projectile_kind = new_projectile_kind
 	visual_time = 0.0
 	rotation = direction.angle()
 	active = true
@@ -61,7 +67,21 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	if projectile_kind == ProjectileKind.TURRET_SHELL:
+		_draw_turret_shell()
+		return
 	_draw_projectile_frame(2, Vector2(23, 13))
+
+
+func _draw_turret_shell() -> void:
+	# Three baked frames replace procedural lines: still one draw per moving shell.
+	var frame := int(visual_time * 12.0) % 3
+	var cell := Vector2(TURRET_SHELL_TRAIL.get_width() / 3.0, TURRET_SHELL_TRAIL.get_height())
+	var source := Rect2(Vector2(frame * cell.x, 0.0), cell)
+	# An intentionally bold animated wake keeps the small shell readable in battle.
+	draw_texture_rect_region(TURRET_SHELL_TRAIL, Rect2(-30.0, -7.5, 29.0, 15.0), source, Color.WHITE, false, true)
+	# 20% thinner than the previous shell while keeping its readable length.
+	draw_texture_rect(TURRET_SHELL_ART, Rect2(-10.2, -5.44, 20.4, 10.88), false)
 
 
 func _draw_projectile_frame(column: int, size: Vector2) -> void:

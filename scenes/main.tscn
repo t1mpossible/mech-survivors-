@@ -6,12 +6,18 @@
 [ext_resource type="PackedScene" path="res://scenes/desert_environment.tscn" id="7_desert"]
 [ext_resource type="Texture2D" uid="uid://ckwtrvmpc253o" path="res://assets/mech_v3_directions.png" id="9_mech_walk"]
 [ext_resource type="Shader" uid="uid://sjkefkx6b2xa" path="res://scripts/mech_treads.gdshader" id="10_treads"]
+[ext_resource type="Script" path="res://scripts/ground_shadow.gd" id="11_shadow"]
 [ext_resource type="Script" uid="uid://bcdvmthbcbkhm" path="res://scripts/audio_feedback.gd" id="11_audio"]
 [ext_resource type="PackedScene" path="res://scenes/autocannon.tscn" id="12_autocannon"]
 [ext_resource type="PackedScene" path="res://scenes/hunter_launcher.tscn" id="13_launcher"]
 [ext_resource type="PackedScene" path="res://scenes/laser_weapon.tscn" id="14_laser"]
 [ext_resource type="PackedScene" path="res://scenes/orbit_weapon.tscn" id="15_orbit"]
 [ext_resource type="PackedScene" path="res://scenes/minimap.tscn" id="16_minimap"]
+[ext_resource type="Script" path="res://scripts/upgrade_icon.gd" id="17_upgrade_icon"]
+
+[ext_resource type="Script" path="res://scripts/ui_safe_area.gd" id="18_safe_area"]
+[ext_resource type="AudioStream" path="res://assets/audio/mechfall_zone1_stable_audio.wav" id="19_zone_music"]
+[ext_resource type="Script" path="res://scripts/virtual_joystick.gd" id="20_virtual_joystick"]
 
 [sub_resource type="ShaderMaterial" id="MechTreadMaterial"]
 resource_local_to_scene = true
@@ -76,10 +82,111 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
+[sub_resource type="StyleBoxFlat" id="StyleWaveButton"]
+bg_color = Color(0.025, 0.08, 0.12, 0.56)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.21, 0.54, 0.7, 0.55)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxFlat" id="StyleWaveButtonHover"]
+bg_color = Color(0.08, 0.28, 0.38, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.88, 1, 0.9)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxFlat" id="StyleUpgradePanel"]
+bg_color = Color(0.018, 0.045, 0.075, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.62, 0.82, 0.82)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.48)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleUpgradeCard"]
+bg_color = Color(0.035, 0.09, 0.14, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.42, 0.56, 0.74)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 40.0
+content_margin_top = 1.0
+content_margin_right = 5.0
+content_margin_bottom = 1.0
+
+[sub_resource type="StyleBoxFlat" id="StyleUpgradeCardHover"]
+bg_color = Color(0.09, 0.18, 0.23, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.7, 0.25, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 40.0
+content_margin_top = 1.0
+content_margin_right = 5.0
+content_margin_bottom = 1.0
+
+[sub_resource type="StyleBoxFlat" id="StyleUpgradeCardPressed"]
+bg_color = Color(0.13, 0.26, 0.3, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.82, 0.43, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 40.0
+content_margin_top = 1.0
+content_margin_right = 5.0
+content_margin_bottom = 1.0
+
 [node name="Main" type="Node2D" unique_id=1981888339]
 script = ExtResource("1_main")
 
 [node name="DesertBackground" parent="." instance=ExtResource("7_desert")]
+
+[node name="MechShadow" type="Node2D" parent="."]
+position = Vector2(800, 463)
+script = ExtResource("11_shadow")
+radius = Vector2(22.5, 6)
+opacity = 0.28
 
 [node name="MechSprite" type="Sprite2D" parent="." unique_id=2092117371]
 material = SubResource("MechTreadMaterial")
@@ -113,15 +220,37 @@ position = Vector2(49, 55)
 [node name="AudioFeedback" type="Node" parent="." unique_id=76095691]
 script = ExtResource("11_audio")
 
+[node name="ZoneMusic" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("19_zone_music")
+volume_db = -3.0
+
 [node name="Pickups" type="Node2D" parent="." unique_id=821113691]
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=515854718]
 
 [node name="HudScale" type="Control" parent="Hud"]
-offset_right = 640.0
-offset_bottom = 360.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture_filter = 2
+script = ExtResource("18_safe_area")
 
 [node name="Minimap" parent="Hud/HudScale" instance=ExtResource("16_minimap")]
+
+[node name="VirtualJoystick" type="Control" parent="Hud/HudScale"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = -142.0
+offset_right = 142.0
+offset_bottom = -14.0
+mouse_filter = 2
+script = ExtResource("20_virtual_joystick")
 
 [node name="Title" type="Label" parent="Hud/HudScale" unique_id=559856810]
 offset_left = 12.0
@@ -148,19 +277,29 @@ theme_override_font_sizes/font_size = 10
 text = "ЗОНА 1"
 
 [node name="Hint" type="Label" parent="Hud/HudScale" unique_id=942107196]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
 visible = false
 offset_left = 16.0
-offset_top = 316.0
+offset_top = -44.0
 offset_right = 380.0
-offset_bottom = 348.0
+offset_bottom = -12.0
 theme_override_colors/font_color = Color(0.55, 0.7, 0.72, 1)
 theme_override_font_sizes/font_size = 10
 text = "WASD / стрелки • ESC — пауза"
 
 [node name="Wave" type="Label" parent="Hud/HudScale" unique_id=1005278072]
-offset_left = 250.0
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -70.0
 offset_top = 5.0
-offset_right = 390.0
+offset_right = 70.0
 offset_bottom = 22.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.93, 0.97, 1, 1)
@@ -171,9 +310,14 @@ theme_override_font_sizes/font_size = 11
 text = "WAVE 1"
 
 [node name="WaveTimer" type="Label" parent="Hud/HudScale" unique_id=1188077121]
-offset_left = 250.0
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -70.0
 offset_top = 23.0
-offset_right = 390.0
+offset_right = 70.0
 offset_bottom = 40.0
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.95, 0.98, 1, 1)
@@ -184,75 +328,151 @@ theme_override_font_sizes/font_size = 10
 text = "TIME 60s"
 
 [node name="Fps" type="Label" parent="Hud/HudScale" unique_id=31702534]
-visible = false
-offset_left = 580.0
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -60.0
 offset_top = 60.0
-offset_right = 628.0
+offset_right = -12.0
 offset_bottom = 74.0
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.63, 0.82, 0.94, 0.82)
 theme_override_font_sizes/font_size = 7
-text = "FPS 60"
+text = "FPS --"
 
 [node name="Wave1" type="Button" parent="Hud/HudScale" unique_id=111241507]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
 visible = false
-offset_left = 388.0
-offset_top = 90.0
-offset_right = 428.0
-offset_bottom = 112.0
-theme_override_font_sizes/font_size = 12
-text = "W1"
+tooltip_text = "Перейти к волне 1"
+offset_left = -44.0
+offset_top = 45.0
+offset_right = -30.0
+offset_bottom = 57.0
+theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.8, 0.94, 1, 1)
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
+text = "1"
 
 [node name="Wave2" type="Button" parent="Hud/HudScale" unique_id=1350274399]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
 visible = false
-offset_left = 430.0
-offset_top = 90.0
-offset_right = 470.0
-offset_bottom = 112.0
-theme_override_font_sizes/font_size = 12
-text = "W2"
+tooltip_text = "Перейти к волне 2"
+offset_left = -28.0
+offset_top = 45.0
+offset_right = -14.0
+offset_bottom = 57.0
+theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.8, 0.94, 1, 1)
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
+text = "2"
 
 [node name="Wave3" type="Button" parent="Hud/HudScale" unique_id=1796233399]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
 visible = false
-offset_left = 472.0
-offset_top = 90.0
-offset_right = 512.0
-offset_bottom = 112.0
-theme_override_font_sizes/font_size = 12
-text = "W3"
+tooltip_text = "Перейти к волне 3"
+offset_left = -12.0
+offset_top = 45.0
+offset_right = 2.0
+offset_bottom = 57.0
+theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.8, 0.94, 1, 1)
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
+text = "3"
 
 [node name="Wave4" type="Button" parent="Hud/HudScale" unique_id=253747977]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
 visible = false
-offset_left = 514.0
-offset_top = 90.0
-offset_right = 554.0
-offset_bottom = 112.0
-theme_override_font_sizes/font_size = 12
-text = "W4"
+tooltip_text = "Перейти к волне 4"
+offset_left = 4.0
+offset_top = 45.0
+offset_right = 18.0
+offset_bottom = 57.0
+theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.8, 0.94, 1, 1)
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
+text = "4"
 
 [node name="Wave5" type="Button" parent="Hud/HudScale" unique_id=1659096950]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
 visible = false
-offset_left = 556.0
-offset_top = 90.0
-offset_right = 596.0
-offset_bottom = 112.0
-theme_override_font_sizes/font_size = 12
-text = "W5"
+tooltip_text = "Перейти к волне 5"
+offset_left = 20.0
+offset_top = 45.0
+offset_right = 34.0
+offset_bottom = 57.0
+theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.8, 0.94, 1, 1)
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
+text = "5"
 
 [node name="Wave6" type="Button" parent="Hud/HudScale" unique_id=120094390]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
 visible = false
-offset_left = 598.0
-offset_top = 90.0
-offset_right = 638.0
-offset_bottom = 112.0
-theme_override_font_sizes/font_size = 12
-text = "W6"
+tooltip_text = "Перейти к волне 6"
+offset_left = 36.0
+offset_top = 45.0
+offset_right = 50.0
+offset_bottom = 57.0
+theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.8, 0.94, 1, 1)
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
+text = "6"
 
 [node name="DebugLevel" type="Button" parent="Hud/HudScale" unique_id=748028751]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
 visible = false
-offset_left = 574.0
-offset_top = 116.0
-offset_right = 638.0
-offset_bottom = 140.0
-theme_override_font_sizes/font_size = 12
+tooltip_text = "Получить уровень"
+offset_left = 52.0
+offset_top = 45.0
+offset_right = 76.0
+offset_bottom = 57.0
+theme_override_font_sizes/font_size = 6
+theme_override_colors/font_color = Color(1, 0.82, 0.36, 1)
+theme_override_styles/normal = SubResource("StyleWaveButton")
+theme_override_styles/hover = SubResource("StyleWaveButtonHover")
+theme_override_styles/pressed = SubResource("StyleWaveButtonHover")
 text = "+LV"
 
 [node name="DebugScout" type="Button" parent="Hud/HudScale" unique_id=1041974503]
@@ -302,9 +522,14 @@ theme_override_font_sizes/font_size = 12
 text = "СИГНАЛ: РАЗВЕДЧИК ОБНАРУЖЕН"
 
 [node name="Level" type="Label" parent="Hud/HudScale" unique_id=1152549347]
-offset_left = 402.0
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -238.0
 offset_top = 24.0
-offset_right = 441.0
+offset_right = -199.0
 offset_bottom = 42.0
 theme_override_colors/font_color = Color(0.94, 0.98, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
@@ -314,9 +539,14 @@ theme_override_font_sizes/font_size = 10
 text = "LV 1"
 
 [node name="ExperienceBar" type="ProgressBar" parent="Hud/HudScale" unique_id=1024860453]
-offset_left = 518.0
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -122.0
 offset_top = 30.0
-offset_right = 625.0
+offset_right = -15.0
 offset_bottom = 39.0
 theme_override_styles/background = SubResource("StyleXpBackground")
 theme_override_styles/fill = SubResource("StyleXpFill")
@@ -324,9 +554,14 @@ max_value = 10.0
 show_percentage = false
 
 [node name="ExperienceValue" type="Label" parent="Hud/HudScale" unique_id=1034032945]
-offset_left = 445.0
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -195.0
 offset_top = 24.0
-offset_right = 514.0
+offset_right = -126.0
 offset_bottom = 42.0
 theme_override_colors/font_color = Color(0.94, 0.98, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
@@ -336,9 +571,14 @@ theme_override_font_sizes/font_size = 10
 text = "XP 0/25"
 
 [node name="HealthBar" type="ProgressBar" parent="Hud/HudScale" unique_id=1421237078]
-offset_left = 518.0
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -122.0
 offset_top = 10.0
-offset_right = 625.0
+offset_right = -15.0
 offset_bottom = 19.0
 theme_override_styles/background = SubResource("StyleHealthBackground")
 theme_override_styles/fill = SubResource("StyleHealthFill")
@@ -346,9 +586,14 @@ value = 100.0
 show_percentage = false
 
 [node name="HealthValue" type="Label" parent="Hud/HudScale" unique_id=1737690902]
-offset_left = 445.0
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -195.0
 offset_top = 4.0
-offset_right = 514.0
+offset_right = -126.0
 offset_bottom = 22.0
 theme_override_colors/font_color = Color(0.94, 0.98, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.08, 0.9)
@@ -358,10 +603,15 @@ theme_override_font_sizes/font_size = 10
 text = "HP 100"
 
 [node name="ShieldValue" type="Label" parent="Hud/HudScale" unique_id=491115677]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
 visible = false
-offset_left = 626.0
+offset_left = -14.0
 offset_top = 13.0
-offset_right = 632.0
+offset_right = -8.0
 offset_bottom = 28.0
 theme_override_colors/font_color = Color(0.5, 0.75, 1, 1)
 theme_override_font_sizes/font_size = 7
@@ -379,74 +629,141 @@ text = "ПУШКА 1
 БРОНЯ 0% | ЩИТ 0"
 
 [node name="UpgradePanel" type="Panel" parent="Hud/HudScale" unique_id=326528651]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 process_mode = 3
 visible = false
-offset_left = 130.0
-offset_top = 76.0
-offset_right = 510.0
-offset_bottom = 300.0
+offset_left = -150.0
+offset_top = -101.0
+offset_right = 150.0
+offset_bottom = 101.0
+theme_override_styles/panel = SubResource("StyleUpgradePanel")
 
 [node name="Title" type="Label" parent="Hud/HudScale/UpgradePanel" unique_id=1247445067]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 16.0
-offset_right = 340.0
-offset_bottom = 38.0
+offset_left = 14.0
+offset_top = 11.0
+offset_right = 286.0
+offset_bottom = 29.0
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 13
 text = "НОВЫЙ УРОВЕНЬ"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Hud/HudScale/UpgradePanel" unique_id=624369483]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 42.0
-offset_right = 340.0
-offset_bottom = 58.0
+offset_left = 14.0
+offset_top = 31.0
+offset_right = 286.0
+offset_bottom = 43.0
 theme_override_colors/font_color = Color(0.7, 0.85, 0.9, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 8
 text = "Выберите одно улучшение"
 horizontal_alignment = 1
 
 [node name="OptionA" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=1460514263]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 72.0
-offset_right = 336.0
-offset_bottom = 98.0
-theme_override_font_sizes/font_size = 14
+offset_left = 14.0
+offset_top = 54.0
+offset_right = 286.0
+offset_bottom = 84.0
+theme_override_colors/font_color = Color(0.86, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("StyleUpgradeCard")
+theme_override_styles/hover = SubResource("StyleUpgradeCardHover")
+theme_override_styles/pressed = SubResource("StyleUpgradeCardPressed")
+alignment = 0
 
 [node name="OptionB" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=355387298]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 108.0
-offset_right = 336.0
-offset_bottom = 134.0
-theme_override_font_sizes/font_size = 14
+offset_left = 14.0
+offset_top = 88.0
+offset_right = 286.0
+offset_bottom = 118.0
+theme_override_colors/font_color = Color(0.86, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("StyleUpgradeCard")
+theme_override_styles/hover = SubResource("StyleUpgradeCardHover")
+theme_override_styles/pressed = SubResource("StyleUpgradeCardPressed")
+alignment = 0
 
 [node name="OptionC" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=195572078]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 144.0
-offset_right = 336.0
-offset_bottom = 170.0
-theme_override_font_sizes/font_size = 14
+offset_left = 14.0
+offset_top = 122.0
+offset_right = 286.0
+offset_bottom = 152.0
+theme_override_colors/font_color = Color(0.86, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("StyleUpgradeCard")
+theme_override_styles/hover = SubResource("StyleUpgradeCardHover")
+theme_override_styles/pressed = SubResource("StyleUpgradeCardPressed")
+alignment = 0
 
 [node name="OptionD" type="Button" parent="Hud/HudScale/UpgradePanel" unique_id=870097387]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 180.0
-offset_right = 336.0
-offset_bottom = 206.0
-theme_override_font_sizes/font_size = 14
+offset_left = 14.0
+offset_top = 156.0
+offset_right = 286.0
+offset_bottom = 186.0
+theme_override_colors/font_color = Color(0.86, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("StyleUpgradeCard")
+theme_override_styles/hover = SubResource("StyleUpgradeCardHover")
+theme_override_styles/pressed = SubResource("StyleUpgradeCardPressed")
+alignment = 0
+
+[node name="IconA" type="Control" parent="Hud/HudScale/UpgradePanel"]
+layout_mode = 0
+mouse_filter = 2
+offset_left = 14.0
+offset_top = 54.0
+offset_right = 44.0
+offset_bottom = 84.0
+script = ExtResource("17_upgrade_icon")
+
+[node name="IconB" type="Control" parent="Hud/HudScale/UpgradePanel"]
+layout_mode = 0
+mouse_filter = 2
+offset_left = 14.0
+offset_top = 88.0
+offset_right = 44.0
+offset_bottom = 118.0
+script = ExtResource("17_upgrade_icon")
+
+[node name="IconC" type="Control" parent="Hud/HudScale/UpgradePanel"]
+layout_mode = 0
+mouse_filter = 2
+offset_left = 14.0
+offset_top = 122.0
+offset_right = 44.0
+offset_bottom = 152.0
+script = ExtResource("17_upgrade_icon")
+
+[node name="IconD" type="Control" parent="Hud/HudScale/UpgradePanel"]
+layout_mode = 0
+mouse_filter = 2
+offset_left = 14.0
+offset_top = 156.0
+offset_right = 44.0
+offset_bottom = 186.0
+script = ExtResource("17_upgrade_icon")
 
 [node name="GameOver" type="Panel" parent="Hud/HudScale" unique_id=264490346]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 process_mode = 3
 visible = false
-offset_left = 190.0
-offset_top = 121.0
-offset_right = 450.0
-offset_bottom = 239.0
+offset_left = -130.0
+offset_top = -59.0
+offset_right = 130.0
+offset_bottom = 59.0
 
 [node name="Title" type="Label" parent="Hud/HudScale/GameOver" unique_id=1873098156]
 theme_override_font_sizes/font_size = 16
@@ -480,12 +797,17 @@ alignment = 1
 text = "Меню"
 
 [node name="Victory" type="Panel" parent="Hud/HudScale" unique_id=2131317258]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 process_mode = 3
 visible = false
-offset_left = 116.0
-offset_top = 84.0
-offset_right = 524.0
-offset_bottom = 284.0
+offset_left = -204.0
+offset_top = -96.0
+offset_right = 204.0
+offset_bottom = 104.0
 theme_override_styles/panel = SubResource("StyleHudPanel")
 
 [node name="Title" type="Label" parent="Hud/HudScale/Victory" unique_id=1760057443]
@@ -529,12 +851,17 @@ theme_override_font_sizes/font_size = 14
 text = "ПЕРЕЙТИ В ЗОНУ 2"
 
 [node name="BattleSummary" type="Panel" parent="Hud/HudScale" unique_id=771804392]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 process_mode = 3
 visible = false
-offset_left = 100.0
-offset_top = 62.0
-offset_right = 540.0
-offset_bottom = 306.0
+offset_left = -220.0
+offset_top = -118.0
+offset_right = 220.0
+offset_bottom = 126.0
 theme_override_styles/panel = SubResource("StyleHudPanel")
 
 [node name="Title" type="Label" parent="Hud/HudScale/BattleSummary" unique_id=1083061034]
@@ -618,12 +945,17 @@ theme_override_font_sizes/font_size = 14
 text = "ЗОНА 2"
 
 [node name="PausePanel" type="Panel" parent="Hud/HudScale" unique_id=580504851]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 process_mode = 3
 visible = false
-offset_left = 170.0
-offset_top = 112.0
-offset_right = 470.0
-offset_bottom = 300.0
+offset_left = -150.0
+offset_top = -68.0
+offset_right = 150.0
+offset_bottom = 120.0
 theme_override_styles/panel = SubResource("StyleHudPanel")
 script = ExtResource("6_pause")
 

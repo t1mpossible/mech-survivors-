@@ -1,0 +1,1 @@
+Three-frame horizontal 2D game sprite sheet: hot orange-yellow-white futuristic rocket impact, transparent background, flash → expanding fireball → fading sparks. No text, no ground, no missile, no UI.

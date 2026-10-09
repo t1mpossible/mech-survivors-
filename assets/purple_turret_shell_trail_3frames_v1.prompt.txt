@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Godot 2D game projectile trail sprite sheet
+Primary request: a single horizontal strip with exactly 3 equally sized animation frames of a short violet energy trail behind a moving tank shell. The trail points from left to right: its bright head is at the right edge, and its fading tail extends left. Frame 1: small lavender pulse near the head. Frame 2: pulse moves halfway down the trail. Frame 3: pulse moves farther left while a new small glow starts at the head. The shape should be narrow, compact, and designed to sit behind a small purple shell.
+Scene/backdrop: genuine transparent background alpha, no ground or UI
+Style/medium: crisp minimal futuristic sci-fi VFX matching Mechfall's violet alien turret and desert style
+Composition/framing: one centered trail per frame, identical size and placement, horizontal 3-frame strip
+Color palette: dark violet outer glow, lavender and pale purple core
+Constraints: no shell, no rocket, no flames, no smoke, no debris, no text, no watermark; exactly three frames left to right

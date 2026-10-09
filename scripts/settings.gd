@@ -25,7 +25,9 @@ func set_fullscreen(value: bool) -> void:
 
 func _apply_settings() -> void:
 	_apply_volume()
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
+	# Browsers only allow fullscreen from a user's click, not during startup.
+	if not OS.has_feature("web"):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
 
 
 func _apply_volume() -> void:

@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Godot 2D game effect sprite sheet
+Primary request: a single horizontal strip with exactly 3 evenly sized animation frames for a non-explosive enemy death effect from small weapons: frame 1 is a compact cyan electric hit flash around a robotic alien silhouette, frame 2 is the silhouette softly dissolving into blue-violet energy dust and thin fading scanlines, frame 3 is only a few dim energy motes fading out. It must NOT look like an explosion and must have NO flying metal chunks, no fireball, no smoke cloud, no debris.
+Scene/backdrop: genuine transparent background (alpha), no ground, no UI
+Style/medium: crisp hand-painted sci-fi game VFX, compatible with minimal futuristic Mechfall desert enemy art
+Composition/framing: one centered effect in each of the three cells, consistent scale, wide 3-frame sprite strip
+Color palette: cyan, cool blue, small violet accents
+Constraints: transparent pixels outside the effect; no text, no watermark; exactly three frames left to right

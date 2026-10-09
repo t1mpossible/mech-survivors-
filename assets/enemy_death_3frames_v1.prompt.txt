@@ -1,0 +1,1 @@
+Three-frame horizontal 2D game sprite sheet: violet plasma and cyan electric alien death burst, transparent background, rupture → expanding shards → fading purple smoke. No text, no ground, no enemy body, no UI.
