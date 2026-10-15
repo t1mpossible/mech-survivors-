@@ -493,6 +493,12 @@ func _on_scout_health_changed(current_health: int, maximum_health: int) -> void:
 
 
 func _on_scout_died(dead_scout: AlienScout) -> void:
+	if dead_scout is AlienBoss and wave_number == 6:
+		boss = null
+		_set_boss_hud_visible(false)
+		_update_wave_selector()
+		_show_victory(planet_number)
+		return
 	var orb := acquire_xp_orb()
 	if orb != null:
 		orb.activate(dead_scout.global_position, dead_scout.xp_tier, dead_scout.experience_amount)
@@ -500,9 +506,6 @@ func _on_scout_died(dead_scout: AlienScout) -> void:
 		boss = null
 		_set_boss_hud_visible(false)
 		_update_wave_selector()
-		if wave_number == 6:
-			_show_victory(planet_number)
-			return
 	$Hud/HudScale/EnemyStatus.text = "ОРБ ОПЫТА СБРОШЕН"
 
 
@@ -1256,7 +1259,9 @@ func _show_victory(finished_planet: int) -> void:
 	$Hud/HudScale/BattleSummary/Laser.text = "ЛАЗЕР             %d" % int(weapon_damage_totals["ЛАЗЕР"])
 	$Hud/HudScale/BattleSummary/Shurikens.text = "НАГРЕВ            %d" % int(weapon_damage_totals["ТЕРМОБАРИЧЕСКИЙ НАГРЕВ"]) if orbit_weapon.branch == "heat" else "СЮРИКЕНЫ          %d" % int(weapon_damage_totals["СЮРИКЕНЫ"])
 	$Hud/HudScale/BattleSummary/NextZone.text = "ПЕРЕЙТИ В ЗОНУ %d" % next_planet if finished_planet < PLANET_COUNT else "В ГЛАВНОЕ МЕНЮ"
-	$Hud/HudScale/Victory.visible = true
+	var victory_panel: Control = $Hud/HudScale/Victory
+	victory_panel.visible = true
+	victory_panel.move_to_front()
 	$Hud/HudScale/EnemyStatus.text = "ЗОНА %d ПРОЙДЕНА" % finished_planet
 	get_tree().paused = true
 

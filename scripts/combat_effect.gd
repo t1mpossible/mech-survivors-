@@ -41,7 +41,8 @@ func activate(world_position: Vector2, new_type: int, new_scale: float = 1.0) ->
 	spark_offset = randf_range(0.0, TAU)
 	active = true
 	visible = true
-	process_mode = Node.PROCESS_MODE_INHERIT
+	# Effects are cosmetic: let an already-started burst finish if victory/pause freezes gameplay.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_update_animated_burst(0.0)
 	queue_redraw()
 
