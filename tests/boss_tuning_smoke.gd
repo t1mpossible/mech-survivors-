@@ -21,7 +21,7 @@ func _run() -> void:
 	game._spawn_boss()
 	var boss: AlienBoss = game.boss
 	boss.set_process(false)
-	assert(is_equal_approx(boss.ROCKET_SPEED_PHASE_ONE, 45.0))
+	assert(is_equal_approx(boss.BOSS_ROCKET_SPEED, 51.84))
 	assert(is_equal_approx(boss.ROCKET_INTERVAL_PHASE_ONE, 2.55))
 	assert(is_equal_approx(boss.MINE_PROJECTILE_SPEED, 75.0))
 	assert(is_equal_approx(boss.MINE_PROJECTILE_FLIGHT_TIME, 3.0))
@@ -36,12 +36,17 @@ func _run() -> void:
 	boss.take_damage(850)
 	assert(boss.phase == 2 and is_equal_approx(hud.get_node("BossHealth").value, 2000.0))
 	assert(hud.get_node("BossPhase").text == "БОСС • ФАЗА 2 / 3")
-	boss._launch_mine_pair()
+	boss.mine_time_left = 0.01
+	boss._process(0.02)
 	var mines := get_nodes_in_group("enemy_hazards")
 	assert(mines.size() == 2)
 	for mine in mines:
 		assert(is_equal_approx(mine.speed, 75.0))
 		assert(is_equal_approx(mine.fall_time, 3.0))
+	boss._process(0.29)
+	assert(get_nodes_in_group("enemy_hazards").size() == 2, "Second pair must wait for the 0.3-second burst delay")
+	boss._process(0.02)
+	assert(get_nodes_in_group("enemy_hazards").size() == 4, "Phase two salvo must launch four shells as two pairs")
 	boss.phase = 1
 	boss.rocket_time_left = 0.01
 	boss.target_position = Vector2(800, 300)
@@ -50,15 +55,27 @@ func _run() -> void:
 	var active_rockets: Array = game.enemy_rocket_pool.filter(func(rocket: EnemyRocket) -> bool: return rocket.active)
 	assert(active_rockets.size() == 2)
 	for rocket in active_rockets:
-		assert(is_equal_approx(rocket.speed, 45.0))
+		assert(is_equal_approx(rocket.speed, 51.84))
 	for rocket in active_rockets:
 		rocket.deactivate()
-	boss.phase = 3
+	boss.phase = 2
+	boss.health = 1
+	boss.take_damage(1)
+	assert(boss.phase == 3 and boss.max_health == 2660 and boss.health == 2660)
+	assert(is_equal_approx(hud.get_node("BossHealth").max_value, 2660.0))
+	assert(is_equal_approx(hud.get_node("BossHealth").value, 2660.0))
 	boss._launch_rocket_pair()
 	active_rockets = game.enemy_rocket_pool.filter(func(rocket: EnemyRocket) -> bool: return rocket.active)
 	assert(active_rockets.size() == 2)
 	for rocket in active_rockets:
-		assert(is_equal_approx(rocket.speed, 36.0), "Phase three rocket speed must remain unchanged")
+		assert(is_equal_approx(rocket.speed, 51.84))
+	boss.mine_time_left = 0.01
+	boss._process(0.02)
+	assert(get_nodes_in_group("enemy_hazards").size() == 6, "Phase three first mine pair must launch")
+	boss._process(0.29)
+	assert(get_nodes_in_group("enemy_hazards").size() == 6)
+	boss._process(0.02)
+	assert(get_nodes_in_group("enemy_hazards").size() == 8, "Phase three salvo must also launch four shells")
 	if "--capture" in OS.get_cmdline_user_args():
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://.godot/boss_hud_preview.png")
