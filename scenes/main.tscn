@@ -308,6 +308,58 @@ theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 11
 text = "WAVE 1"
 
+[node name="BossPhase" type="Label" parent="Hud/HudScale"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -45.0
+offset_top = 3.0
+offset_right = 45.0
+offset_bottom = 17.0
+visible = false
+theme_override_colors/font_color = Color(0.84, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 8
+text = "БОСС"
+horizontal_alignment = 1
+
+[node name="BossHealth" type="ProgressBar" parent="Hud/HudScale"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -88.0
+offset_top = 18.0
+offset_right = 88.0
+offset_bottom = 27.0
+visible = false
+theme_override_styles/background = SubResource("StyleHealthBackground")
+theme_override_styles/fill = SubResource("StyleHealthFill")
+value = 2000.0
+show_percentage = false
+
+[node name="BossPhaseMarker1" type="ColorRect" parent="Hud/HudScale"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -30.0
+offset_top = 18.0
+offset_right = -28.0
+offset_bottom = 27.0
+visible = false
+mouse_filter = 2
+color = Color(0.03, 0.06, 0.09, 0.9)
+
+[node name="BossPhaseMarker2" type="ColorRect" parent="Hud/HudScale"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 28.0
+offset_top = 18.0
+offset_right = 30.0
+offset_bottom = 27.0
+visible = false
+mouse_filter = 2
+color = Color(0.03, 0.06, 0.09, 0.9)
+
 [node name="WaveTimer" type="Label" parent="Hud/HudScale" unique_id=1188077121]
 layout_mode = 1
 anchor_left = 0.5

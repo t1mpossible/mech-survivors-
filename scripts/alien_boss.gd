@@ -8,6 +8,10 @@ const PHASE_HEALTH := 2000
 var phase := 1
 var rocket_time_left := 1.5
 var mine_time_left := 2.5
+const ROCKET_INTERVAL_PHASE_ONE := 3.0 * 0.85
+const ROCKET_SPEED_PHASE_ONE := 36.0 * 1.25
+const MINE_PROJECTILE_SPEED := 60.0 * 1.25
+const MINE_PROJECTILE_FLIGHT_TIME := 3.0
 
 
 func _ready() -> void:
@@ -28,7 +32,7 @@ func _process(delta: float) -> void:
 		rocket_time_left -= delta
 		if rocket_time_left <= 0.0:
 			_launch_rocket_pair()
-			rocket_time_left = 3.0
+			rocket_time_left = ROCKET_INTERVAL_PHASE_ONE if phase == 1 else 3.0
 	if phase == 2 or phase == 3:
 		mine_time_left -= delta
 		if mine_time_left <= 0.0:
@@ -59,7 +63,8 @@ func _launch_rocket_pair() -> void:
 		var rocket: EnemyRocket = get_parent().call("acquire_enemy_rocket") as EnemyRocket
 		if rocket != null:
 			var start_position := global_position + Vector2(side, -13)
-			rocket.activate(start_position, (target_position - start_position).normalized(), 36.0, 19.0, 3.0, 6.0, Vector2(1.6, 1.6))
+			var rocket_speed := ROCKET_SPEED_PHASE_ONE if phase == 1 else 36.0
+			rocket.activate(start_position, (target_position - start_position).normalized(), rocket_speed, 19.0, 3.0, 6.0, Vector2(1.6, 1.6))
 
 
 func _launch_mine_pair() -> void:
@@ -70,7 +75,8 @@ func _launch_mine_pair() -> void:
 		get_parent().add_child(mine)
 		mine.global_position = global_position + Vector2(side, 13)
 		mine.direction = (target_position - mine.global_position).normalized()
-		mine.speed = 60.0
+		mine.speed = MINE_PROJECTILE_SPEED
+		mine.fall_time = MINE_PROJECTILE_FLIGHT_TIME
 
 
 func _draw() -> void:

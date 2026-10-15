@@ -498,6 +498,8 @@ func _on_scout_died(dead_scout: AlienScout) -> void:
 		orb.activate(dead_scout.global_position, dead_scout.xp_tier, dead_scout.experience_amount)
 	if dead_scout is AlienBoss:
 		boss = null
+		_set_boss_hud_visible(false)
+		_update_wave_selector()
 		if wave_number == 6:
 			_show_victory(planet_number)
 			return
@@ -575,7 +577,42 @@ func _spawn_boss() -> void:
 	add_child(boss)
 	boss.global_position = _get_wave_spawn_position()
 	_connect_scout(boss)
+	boss.health_changed.connect(_on_boss_health_changed)
+	_set_boss_hud_visible(true)
+	_update_boss_hud(boss.health, boss.max_health)
 	$Hud/HudScale/EnemyStatus.text = "БОСС: ОСАДНЫЙ ХОДОК — ФАЗА 1"
+	_update_wave_selector()
+
+
+func _on_boss_health_changed(current_health: int, maximum_health: int) -> void:
+	if is_instance_valid(boss):
+		_update_boss_hud(current_health, maximum_health)
+
+
+func _update_boss_hud(current_health: int, maximum_health: int) -> void:
+	var hud := $Hud/HudScale
+	hud.get_node("BossHealth").max_value = maximum_health
+	hud.get_node("BossHealth").value = current_health
+	var current_phase := boss.phase if is_instance_valid(boss) else 1
+	hud.get_node("BossPhase").text = "БОСС • ФАЗА %d / 3" % current_phase
+
+
+func _set_boss_hud_visible(should_show: bool) -> void:
+	var hud := $Hud/HudScale
+	hud.get_node("BossHealth").visible = should_show
+	hud.get_node("BossPhase").visible = should_show
+	for marker_index in range(1, 3):
+		hud.get_node("BossPhaseMarker%d" % marker_index).visible = should_show
+	if should_show:
+		hud.get_node("Wave").offset_top = 32.0
+		hud.get_node("Wave").offset_bottom = 49.0
+		hud.get_node("WaveTimer").offset_top = 50.0
+		hud.get_node("WaveTimer").offset_bottom = 67.0
+	else:
+		hud.get_node("Wave").offset_top = 5.0
+		hud.get_node("Wave").offset_bottom = 22.0
+		hud.get_node("WaveTimer").offset_top = 23.0
+		hud.get_node("WaveTimer").offset_bottom = 40.0
 
 
 func _debug_spawn_scout() -> void:
@@ -621,7 +658,7 @@ func _debug_set_wave(target_wave: int) -> void:
 
 func _update_wave_selector() -> void:
 	# The compact wave shortcuts are a level-one test aid, not part of later zones.
-	var show_selector := planet_number == 1
+	var show_selector := planet_number == 1 and not is_instance_valid(boss)
 	for target_wave in range(1, WAVES_PER_PLANET + 1):
 		$Hud/HudScale.get_node("Wave%d" % target_wave).visible = show_selector
 	$Hud/HudScale/DebugLevel.visible = show_selector
@@ -947,6 +984,7 @@ func _open_upgrade_choice() -> void:
 	else:
 		var first_weapon := _get_autocannon_upgrade() if autocannon.level < 7 else _get_weapon_upgrade()
 		available_upgrades = [first_weapon, _get_weapon_upgrade(false), _get_character_upgrade(), _get_character_upgrade()]
+	available_upgrades = _remove_duplicate_upgrades(available_upgrades)
 	$Hud/HudScale/UpgradePanel.visible = true
 	$Hud/HudScale/UpgradePanel/OptionA.text = available_upgrades[0].title
 	$Hud/HudScale/UpgradePanel/OptionB.text = available_upgrades[1].title
@@ -990,24 +1028,56 @@ func _get_upgrade_icon_index(kind: String) -> int:
 	return UpgradeIcon.HEALTH_ICON
 
 
-func _get_weapon_upgrade(include_autocannon: bool = true) -> Dictionary:
+func _remove_duplicate_upgrades(upgrades: Array[Dictionary]) -> Array[Dictionary]:
+	var unique: Array[Dictionary] = []
+	var used_kinds: Array[String] = []
+	for choice in upgrades:
+		if used_kinds.has(String(choice.kind)):
+			var replacement: Dictionary
+			if _is_character_upgrade_kind(String(choice.kind)):
+				replacement = _get_character_upgrade(used_kinds)
+				if used_kinds.has(String(replacement.kind)):
+					replacement = _get_weapon_upgrade(true, used_kinds)
+			else:
+				replacement = _get_weapon_upgrade(true, used_kinds)
+				if used_kinds.has(String(replacement.kind)):
+					replacement = _get_character_upgrade(used_kinds)
+			if used_kinds.has(String(replacement.kind)):
+				continue
+			choice = replacement
+		unique.append(choice)
+		used_kinds.append(String(choice.kind))
+	while unique.size() < 4:
+		var extra := _get_character_upgrade(used_kinds)
+		if used_kinds.has(String(extra.kind)):
+			break
+		unique.append(extra)
+		used_kinds.append(String(extra.kind))
+	return unique
+
+
+func _is_character_upgrade_kind(kind: String) -> bool:
+	return kind in ["max_health", "repair", "speed", "armor", "shield", "magnet"]
+
+
+func _get_weapon_upgrade(include_autocannon: bool = true, excluded_kinds: Array[String] = []) -> Dictionary:
 	var choices: Array[Dictionary] = []
-	if include_autocannon and autocannon.level < 7:
+	if include_autocannon and autocannon.level < 7 and not excluded_kinds.has("autocannon_step") and not excluded_kinds.has("heavy_autocannon_step"):
 		choices.append(_get_autocannon_upgrade())
-	if not hunter_launcher.unlocked and level >= 3:
+	if not hunter_launcher.unlocked and level >= 3 and not excluded_kinds.has("unlock_missile"):
 		choices.append({"kind": "unlock_missile", "title": "НОВОЕ ОРУЖИЕ: ОХОТНИЧЬИ РАКЕТЫ"})
-	elif hunter_launcher.unlocked and hunter_launcher.level >= 2 and hunter_launcher.level < 7:
+	elif hunter_launcher.unlocked and hunter_launcher.level >= 2 and hunter_launcher.level < 7 and not excluded_kinds.has("missile_step"):
 		choices.append({"kind": "missile_step", "title": hunter_launcher.next_upgrade_title()})
-	if not laser.unlocked and level >= 4:
+	if not laser.unlocked and level >= 4 and not excluded_kinds.has("unlock_laser"):
 		choices.append({"kind": "unlock_laser", "title": "НОВОЕ ОРУЖИЕ: ЛАЗЕР"})
-	elif laser.unlocked and laser.level >= 2 and laser.level < 7:
+	elif laser.unlocked and laser.level >= 2 and laser.level < 7 and not excluded_kinds.has("laser_step"):
 		choices.append({"kind": "laser_step", "title": laser.next_upgrade_title()})
-	if not shuriken_unlocked and level >= 5:
+	if not shuriken_unlocked and level >= 5 and not excluded_kinds.has("unlock_shuriken"):
 		choices.append({"kind": "unlock_shuriken", "title": "НОВОЕ ОРУЖИЕ: СЮРИКЕНЫ"})
-	elif orbit_weapon.unlocked and orbit_weapon.level >= 2 and orbit_weapon.level < 7:
+	elif orbit_weapon.unlocked and orbit_weapon.level >= 2 and orbit_weapon.level < 7 and not excluded_kinds.has("orbit_step"):
 		choices.append({"kind": "orbit_step", "title": orbit_weapon.next_upgrade_title()})
 	if choices.is_empty():
-		return _get_autocannon_upgrade() if autocannon.level < 7 else _get_character_upgrade()
+		return _get_character_upgrade(excluded_kinds)
 	return choices.pick_random()
 
 
@@ -1021,7 +1091,7 @@ func _get_heavy_autocannon_upgrade() -> Dictionary:
 	return {"kind": "heavy_autocannon_step", "title": autocannon.next_upgrade_title("heavy")}
 
 
-func _get_character_upgrade() -> Dictionary:
+func _get_character_upgrade(excluded_kinds: Array[String] = []) -> Dictionary:
 	var choices: Array[Dictionary] = [
 		{"kind": "max_health", "title": "КОРПУС: +20 максимального HP"},
 		{"kind": "repair", "title": "РЕМОНТ: +1 HP в секунду"},
@@ -1030,7 +1100,11 @@ func _get_character_upgrade() -> Dictionary:
 		{"kind": "shield", "title": "ЩИТ: +25 поглощения урона"},
 		{"kind": "magnet", "title": "МАГНИТ: притянуть весь опыт"}
 	]
-	return choices.pick_random()
+	var available: Array[Dictionary] = []
+	for choice in choices:
+		if not excluded_kinds.has(String(choice.kind)):
+			available.append(choice)
+	return available.pick_random() if not available.is_empty() else {"kind": "character_upgrade_fallback", "title": "УЛУЧШЕНИЕ КОРПУСА"}
 
 
 func _choose_upgrade(index: int) -> void:

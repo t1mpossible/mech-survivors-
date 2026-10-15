@@ -5,7 +5,7 @@ var pulse := 0.0
 
 
 func _ready() -> void:
-	movement_speed = 15.0
+	movement_speed = 20.25 # +35% faster walking mine
 	max_health = 90
 	health = max_health
 	contact_damage_per_second = 0.0
