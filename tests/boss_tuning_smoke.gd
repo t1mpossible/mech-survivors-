@@ -80,13 +80,16 @@ func _run() -> void:
 	assert(get_nodes_in_group("enemy_hazards").size() == 8, "Phase three salvo must also launch four shells")
 	game.wave_number = 6
 	boss.take_damage(boss.health, CombatEffect.Type.ENEMY_DEATH)
-	assert(hud.get_node("Victory").visible, "Victory panel must appear on the final boss death signal")
-	assert(game.victory_open and paused, "Final boss death must pause gameplay immediately")
+	assert(not hud.get_node("Victory").visible, "Victory panel should wait for the configured delay")
+	assert(game.victory_pending and not game.victory_open and paused, "Final boss death should pause gameplay and start the victory delay")
 	var death_effects: Array[CombatEffect] = game.combat_effect_pool.filter(func(effect: CombatEffect) -> bool: return effect.active and effect.effect_type == CombatEffect.Type.ENEMY_DEATH)
 	assert(not death_effects.is_empty(), "Boss death explosion should remain active behind the victory panel")
 	assert(death_effects[0].process_mode == Node.PROCESS_MODE_ALWAYS, "The explosion animation should finish while gameplay is paused")
-	await create_timer(0.6, true).timeout
-	assert(not death_effects[0].active and hud.get_node("Victory").visible, "Explosion should finish without delaying or hiding victory")
+	assert(is_equal_approx(game.FINAL_BOSS_VICTORY_DELAY, 6.0))
+	await create_timer(5.9, true).timeout
+	assert(not hud.get_node("Victory").visible, "Victory window must not appear before six seconds")
+	await create_timer(0.2, true).timeout
+	assert(not death_effects[0].active and hud.get_node("Victory").visible and game.victory_open, "Victory should appear after six seconds and the explosion should have finished")
 	paused = false
 	if "--capture" in OS.get_cmdline_user_args():
 		await RenderingServer.frame_post_draw

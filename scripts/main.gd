@@ -43,6 +43,7 @@ const MAX_COMBAT_POPUPS := 10
 const TARGET_REFRESH_INTERVAL := 0.15
 const ZONE_MUSIC_VOLUME_DB := -3.0
 const ZONE_MUSIC_UPGRADE_VOLUME_DB := -9.0206
+const FINAL_BOSS_VICTORY_DELAY := 6.0
 
 var mech_position := MAP_SIZE / 2.0
 var tread_travel := 0.0
@@ -90,6 +91,7 @@ var weapon_visual_time := 0.0
 var upgrade_open := false
 var mech_destroyed := false
 var manual_paused := false
+var victory_pending := false
 var victory_open := false
 var completed_planet := 0
 var weapon_damage_totals := {
@@ -497,7 +499,9 @@ func _on_scout_died(dead_scout: AlienScout) -> void:
 		boss = null
 		_set_boss_hud_visible(false)
 		_update_wave_selector()
-		_show_victory(planet_number)
+		victory_pending = true
+		get_tree().paused = true
+		_show_victory_after_boss_delay(planet_number)
 		return
 	var orb := acquire_xp_orb()
 	if orb != null:
@@ -1241,6 +1245,7 @@ func _return_to_menu() -> void:
 
 
 func _show_victory(finished_planet: int) -> void:
+	victory_pending = false
 	victory_open = true
 	completed_planet = finished_planet
 	var next_planet := mini(finished_planet + 1, PLANET_COUNT)
@@ -1266,6 +1271,13 @@ func _show_victory(finished_planet: int) -> void:
 	get_tree().paused = true
 
 
+func _show_victory_after_boss_delay(finished_planet: int) -> void:
+	await get_tree().create_timer(FINAL_BOSS_VICTORY_DELAY, true).timeout
+	if not is_inside_tree() or not victory_pending:
+		return
+	_show_victory(finished_planet)
+
+
 func _continue_after_victory() -> void:
 	get_tree().paused = false
 	if completed_planet < PLANET_COUNT:
@@ -1286,7 +1298,7 @@ func _hide_battle_summary() -> void:
 
 
 func _toggle_pause() -> void:
-	if upgrade_open or mech_destroyed or victory_open:
+	if upgrade_open or mech_destroyed or victory_pending or victory_open:
 		return
 	virtual_joystick.call("_release_touch")
 	manual_paused = not manual_paused
