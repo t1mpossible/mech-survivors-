@@ -13,7 +13,7 @@ var delayed_mine_pair_time_left := -1.0
 const ROCKET_INTERVAL_PHASE_ONE := 3.0 * 0.85
 const BOSS_ROCKET_SPEED := 36.0 * 1.44
 const MINE_PROJECTILE_SPEED := 60.0 * 1.25
-const MINE_PROJECTILE_FLIGHT_TIME := 3.0
+const MINE_PROJECTILE_FLIGHT_TIME := 1.8
 
 
 func _ready() -> void:
