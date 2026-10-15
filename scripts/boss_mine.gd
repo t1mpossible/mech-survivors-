@@ -10,10 +10,14 @@ var fall_time := 1.4
 var homing_time := 0.0
 var fragment_damage := 15.0
 var visual_time := 0.0
+var trajectory_phase := 0.0
+var trajectory_wobble := 0.0
 
 
 func _ready() -> void:
 	add_to_group("enemy_hazards")
+	trajectory_phase = randf_range(0.0, TAU)
+	trajectory_wobble = randf_range(0.05, 0.12)
 	queue_redraw()
 
 
@@ -24,7 +28,8 @@ func _process(delta: float) -> void:
 		if main != null:
 			direction = (main.get("mech_position") - global_position).normalized()
 		homing_time -= delta
-	global_position += direction * speed * delta
+	var flight_direction := direction.rotated(sin(visual_time * 2.4 + trajectory_phase) * trajectory_wobble)
+	global_position += flight_direction * speed * delta
 	rotation += delta * 1.5
 	fall_time -= delta
 	if fall_time <= 0.0:
